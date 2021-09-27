@@ -24,5 +24,17 @@ describe('Context', () => {
 
             expect(factorySpy).toHaveBeenCalledOnceWith(context);
         });
+
+        it('to call factory once, throttling async calls for each async token', async () => {
+            // @ts-expect-error: Cannot find name 'setTimeout'.ts(2304)
+            const value = new Promise(resolve => setTimeout(resolve, 100)).then(() => 44);
+            const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
+            const timelapse: Context.Token<number> = Symbol();
+
+            context.provide([timelapse], factorySpy);
+            await Promise.all([context.inject(timelapse), context.inject(timelapse)]);
+
+            expect(factorySpy).toHaveBeenCalledOnceWith(context);
+        });
     });
 });
