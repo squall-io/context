@@ -28,36 +28,31 @@ export class Context {
             throw this._error(error, Context.UNKNOWN_KEYS);
         }
 
-        let outcome: any;
-        const outcomes: any[] = [];
-
-        for (const key of keys) {
+        return await Promise.all(keys.map(key => {
             if (this._dependencies.has(key)) {
-                outcomes.push(this._dependencies.get(key));
+                return this._dependencies.get(key);
             } else if (this._pendingDependencies.has(key)) {
                 // NOTE: No error handling, because promise not created here
-                outcomes.push(await this._pendingDependencies.get(key));
+                return this._pendingDependencies.get(key);
             } else {
-                outcome = this._factories.get(key)?.(this);
+                let outcome = this._factories.get(key)?.(this);
 
                 if (outcome instanceof Promise) {
-                    try {
-                        this._pendingDependencies.set(key, outcome);
-                        outcome = await outcome;
+                    this._pendingDependencies.set(key, outcome = outcome.then(value => {
                         this._pendingDependencies.delete(key);
-                    } catch (suppressed) {
+                        this._dependencies.set(key, value);
+                        return value;
+                    }).catch(suppressed => {
                         const error = new Error(`Factory failure for key "${key as any}"`);
                         throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
-                    }
+                    }));
                 } else {
-                    outcomes.push(outcome);
+                    this._dependencies.set(key, outcome);
                 }
 
-                this._dependencies.set(key, outcome);
+                return outcome;
             }
-        }
-
-        return outcomes as any;
+        })) as any;
     }
 }
 
