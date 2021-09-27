@@ -6,7 +6,7 @@ describe('Context', () => {
     let context: Context;
 
     describe('#inject()', () => {
-        it('throw UNKNOWN_KEYS when key has not been registered with Context#provide', async () => {
+        it(`throw UNKNOWN_KEYS when some keys aren't mapped to any factories`, async () => {
             let error: any;
             await context.inject(Symbol()).then(null, reason => error = reason);
 
