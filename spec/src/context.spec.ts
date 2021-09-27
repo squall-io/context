@@ -117,6 +117,14 @@ describe('Context', () => {
             expect(dependencies).toEqual([number, string] as any);
         });
 
+        it(`throw UNKNOWN_KEYS when some keys aren't mapped to any factories, not even in parent hierarchy`, async () => {
+            let error: any;
+            await Context.from(context).inject(Symbol()).then(null, reason => error = reason);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error.name).toBe(Context.UNKNOWN_KEYS as any);
+        });
+
         it(`resolve value if key is defined in parent constructor`, async () => {
             const parent: Context.Token<String> = Symbol('parentToken');
             const self: Context.Token<String> = Symbol('selfToken');
