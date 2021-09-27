@@ -1,0 +1,6 @@
+{
+    "presets": [
+        "@babel/preset-typescript"
+    ]
+    // src --out-dir dist --minified --source-maps --no-babelrc --extensions '.ts' --delete-dir-on-start
+}
