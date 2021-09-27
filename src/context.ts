@@ -35,22 +35,27 @@ export class Context {
                 // NOTE: No error handling, because promise not created here
                 return this._pendingDependencies.get(key);
             } else {
-                let outcome = this._factories.get(key)?.(this);
+                try {
+                    let outcome = this._factories.get(key)?.(this);
 
-                if (outcome instanceof Promise) {
-                    this._pendingDependencies.set(key, outcome = outcome.then(value => {
-                        this._pendingDependencies.delete(key);
-                        this._dependencies.set(key, value);
-                        return value;
-                    }).catch(suppressed => {
-                        const error = new Error(`Factory failure for key "${key.toString() as any}"`);
-                        throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
-                    }));
-                } else {
-                    this._dependencies.set(key, outcome);
+                    if (outcome instanceof Promise) {
+                        this._pendingDependencies.set(key, outcome = outcome.then(value => {
+                            this._pendingDependencies.delete(key);
+                            this._dependencies.set(key, value);
+                            return value;
+                        }).catch(suppressed => {
+                            const error = new Error(`Factory failure for key "${key.toString() as any}"`);
+                            throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
+                        }));
+                    } else {
+                        this._dependencies.set(key, outcome);
+                    }
+
+                    return outcome;
+                } catch (suppressed) {
+                    const error = new Error(`Factory failure for key "${key.toString() as any}"`);
+                    throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
                 }
-
-                return outcome;
             }
         })) as any;
     }
