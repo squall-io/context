@@ -28,7 +28,7 @@ export class Context {
             throw this._error(error, Context.UNKNOWN_KEYS);
         }
 
-        return await Promise.all(keys.map(key => {
+        return Promise.all(keys.map(key => {
             if (this._dependencies.has(key)) {
                 return this._dependencies.get(key);
             } else if (this._pendingDependencies.has(key)) {
