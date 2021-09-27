@@ -21,7 +21,7 @@ export class Context {
     }
 
     async inject<KA extends readonly Context.Key[]>(...keys: KA): Promise<Context.UnboxedKeys<KA>> {
-        const unknownKeys = keys.filter(key => !this._factories.has(key));
+        const unknownKeys = keys.filter(key => !this._factories.has(key)).map(symbol => symbol.toString());
 
         if (unknownKeys.length) {
             const error = new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys}`);
