@@ -4,6 +4,7 @@ export class Context {
 
     private readonly _error = (error: Error, name: string) => Object.assign(error, { name }) as Error;
     private readonly _factories = new Map<Context.Key, (context: Context) => any>();
+    private readonly _pendingDependencies = new Map<Context.Key, Promise<any>>();
     private readonly _dependencies = new Map<Context.Key, any>();
 
     provide<KA extends readonly Context.Key[]>(keys: KA, ...factories: Context.Factories<KA>): this {
@@ -32,12 +33,17 @@ export class Context {
         for (const key of keys) {
             if (this._dependencies.has(key)) {
                 outcomes.push(this._dependencies.get(key));
+            } else if (this._pendingDependencies.has(key)) {
+                // NOTE: No error handling, because promise not created here
+                outcomes.push(await this._pendingDependencies.get(key));
             } else {
                 outcome = this._factories.get(key)?.(this);
 
                 if (outcome instanceof Promise) {
                     try {
+                        this._pendingDependencies.set(key, outcome);
                         outcome = await outcome;
+                        this._pendingDependencies.delete(key);
                     } catch (suppressed) {
                         const error = new Error(`Factory failure for key "${key as any}"`);
                         throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
