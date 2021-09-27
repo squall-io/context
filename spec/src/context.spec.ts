@@ -95,6 +95,6 @@ describe('Context', () => {
             expect(dependencies[0]).toBe(dependencies[1]);
             expect(dependencies[0]).toBeInstanceOf(Criterion);
             expect(constructorSpy).toHaveBeenCalledOnceWith(context);
-        })
+        });
     })
 });
