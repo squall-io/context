@@ -46,5 +46,16 @@ describe('Context', () => {
 
             expect(Array.isArray(dependencies)).toBeTrue()
         });
+
+        it(`to return an array with token's factory returned value`, async () => {
+            const value = Math.random();
+            const timelapse: Context.Token<number> = Symbol();
+            const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
+
+            context.provide([timelapse], factorySpy);
+            const dependencies = await context.inject(timelapse);
+
+            expect(dependencies[0]).toBe(value);
+        });
     });
 });
