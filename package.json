@@ -6,6 +6,8 @@
   "devDependencies": {
     "@types/jasmine": "^3.9.1",
     "jasmine": "^3.9.0",
+    "jasmine-ts": "^0.4.0",
+    "ts-node": "^10.2.1",
     "typescript": "^4.4.3"
   }
 }
