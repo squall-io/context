@@ -57,5 +57,19 @@ describe('Context', () => {
 
             expect(dependencies[0]).toBe(value);
         });
+
+        it(`to return an array with tokens' factory returned values, in call site order`, async () => {
+            const number = Math.random();
+            const string = Math.random().toString(36);
+            const timelapse: Context.Token<number> = Symbol();
+            const babelname: Context.Token<number> = Symbol();
+            const timelapseSpy = jasmine.createSpy('factorySpy').and.returnValue(number);
+            const babelnameSpy = jasmine.createSpy('factorySpy').and.returnValue(string);
+
+            context.provide([timelapse, babelname] as const, timelapseSpy, babelnameSpy);
+            const dependencies = await context.inject(timelapse, babelname);
+
+            expect(dependencies).toEqual([number, string] as any);
+        });
     });
 });
