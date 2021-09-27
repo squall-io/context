@@ -2,5 +2,10 @@
   "name": "context",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT"
+  "license": "MIT",
+  "devDependencies": {
+    "@types/jasmine": "^3.9.1",
+    "jasmine": "^3.9.0",
+    "typescript": "^4.4.3"
+  }
 }
