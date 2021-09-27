@@ -44,7 +44,7 @@ describe('Context', () => {
             context.provide([timelapse], factorySpy);
             const dependencies = await context.inject(timelapse);
 
-            expect(Array.isArray(dependencies)).toBeTrue()
+            expect(Array.isArray(dependencies)).toBeTrue();
         });
 
         it(`to return an array with token's factory returned value`, async () => {
