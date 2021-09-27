@@ -83,4 +83,18 @@ describe('Context', () => {
             expect(dependencies).toEqual([number, string] as any);
         });
     });
+
+    describe('#provide', () => {
+        it('create a factory for classes that accept context as their only contructor argument, if null-factory if provided', async () => {
+            const constructorSpy = jasmine.createSpy();
+            class Criterion { constructor(context: Context) { constructorSpy(context) } }
+
+            context.provide([Criterion], null);
+            const dependencies = await context.inject(Criterion, Criterion);
+
+            expect(dependencies[0]).toBe(dependencies[1]);
+            expect(dependencies[0]).toBeInstanceOf(Criterion);
+            expect(constructorSpy).toHaveBeenCalledOnceWith(context);
+        })
+    })
 });
