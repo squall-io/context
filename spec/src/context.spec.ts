@@ -6,6 +6,14 @@ describe('Context', () => {
     let context: Context;
 
     describe('#inject()', () => {
+        it('throw UNKNOWN_KEYS when key has not been registered with Context#provide', async () => {
+            let error: any;
+            await context.inject(Symbol()).then(null, reason => error = reason);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error.name).toBe(Context.UNKNOWN_KEYS as any);
+        });
+
         it('to call factory once with context', async () => {
             const factorySpy = jasmine.createSpy('factorySpy');
             const timelapse: Context.Token<number> = Symbol();
@@ -100,7 +108,7 @@ describe('Context', () => {
         it('create a factory for classes that accept context as their only contructor argument, if null-factory if provided', async () => {
             // @ts-expect-error: A spread argument must either have a tuple type or be passed to a rest parameter.ts(2556)
             const constructorSpy = jasmine.createSpy().and.callFake((...args) => new Criterion(...args));
-            class Criterion {}
+            class Criterion { }
 
             context.provide([Criterion], constructorSpy);
             const dependencies = await context.inject(Criterion, Criterion);
