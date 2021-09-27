@@ -1,52 +1,52 @@
 export class Context {
     static readonly FACTORY_FAILURE = 'FACTORY_FAILURE';
-    static readonly UNKNOWN_TOKENS = 'UNKNOWN_TOKENS';
+    static readonly UNKNOWN_KEYS = 'UNKNOWN_KEYS';
 
     private readonly _error = (error: Error, name: string) => Object.assign(error, { name }) as Error;
     private readonly _factories = new Map<Context.Key, (context: Context) => any>();
     private readonly _dependencies = new Map<Context.Key, any>();
 
-    provide<KA extends readonly Context.Key[]>(tokens: KA, ...factories: Context.Factories<KA>): this {
-        for (let i = 0, l = tokens.length; i < l; i++) {
-            if (null === factories[i] && 'function' === typeof tokens[i]) {
-                this._factories.set(tokens[i]!, () => Reflect.construct(tokens[i]! as any, [this]));
+    provide<KA extends readonly Context.Key[]>(keys: KA, ...factories: Context.Factories<KA>): this {
+        for (let i = 0, l = keys.length; i < l; i++) {
+            if (null === factories[i] && 'function' === typeof keys[i]) {
+                this._factories.set(keys[i]!, () => Reflect.construct(keys[i]! as any, [this]));
                 continue;
             }
 
-            this._factories.set(tokens[i]!, factories[i]!);
+            this._factories.set(keys[i]!, factories[i]!);
         }
 
         return this;
     }
 
-    async inject<KA extends readonly Context.Key[]>(...tokens: KA): Promise<Context.UnboxedKeys<KA>> {
-        const unknownTokens = tokens.filter(token => !this._factories.has(token));
+    async inject<KA extends readonly Context.Key[]>(...keys: KA): Promise<Context.UnboxedKeys<KA>> {
+        const unknownKeys = keys.filter(key => !this._factories.has(key));
 
-        if (unknownTokens.length) {
-            throw this._error(new Error(`Unknown tokens (${unknownTokens.length}): ${unknownTokens}`), Context.UNKNOWN_TOKENS);
+        if (unknownKeys.length) {
+            throw this._error(new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys}`), Context.UNKNOWN_KEYS);
         }
 
         let outcome: any;
         const outcomes: any[] = [];
 
-        for (const token of tokens) {
-            if (this._dependencies.has(token)) {
-                outcomes.push(this._dependencies.get(token));
+        for (const key of keys) {
+            if (this._dependencies.has(key)) {
+                outcomes.push(this._dependencies.get(key));
             } else {
-                outcome = this._factories.get(token)?.(this);
+                outcome = this._factories.get(key)?.(this);
 
                 if (outcome instanceof Promise) {
                     try {
                         outcome = await outcome;
                     } catch (suppressed) {
-                        const error = new Error(`Factory failure for key "${token as any}"`);
+                        const error = new Error(`Factory failure for key "${key as any}"`);
                         throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
                     }
                 } else {
                     outcomes.push(outcome);
                 }
 
-                this._dependencies.set(token, outcome);
+                this._dependencies.set(key, outcome);
             }
         }
 
