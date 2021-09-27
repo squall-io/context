@@ -24,7 +24,8 @@ export class Context {
         const unknownKeys = keys.filter(key => !this._factories.has(key));
 
         if (unknownKeys.length) {
-            throw this._error(new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys}`), Context.UNKNOWN_KEYS);
+            const error = new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys}`);
+            throw this._error(error, Context.UNKNOWN_KEYS);
         }
 
         let outcome: any;
@@ -84,5 +85,6 @@ export namespace Context {
         : never;
     };
 
-    export type Factory<I = any> = (context: Context) => Context.UnboxedPromise<I> | Promise<Context.UnboxedPromise<I>>;
+    export type Factory<I = any> = (context: Context) =>
+        Context.UnboxedPromise<I> | Promise<Context.UnboxedPromise<I>>;
 }
