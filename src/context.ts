@@ -20,7 +20,35 @@ export class Context {
     }
 
     async inject<KA extends readonly Context.Key[]>(...tokens: KA): Promise<Context.UnboxedKeys<KA>> {
-        throw new Error('not yet implemented');
+        const unknownTokens = tokens.filter(token => !this._factories.has(token));
+
+        if (unknownTokens.length) {
+            throw this._error(new Error(`Unknown tokens (${unknownTokens.length}): ${unknownTokens}`), Context.UNKNOWN_TOKENS);
+        }
+
+        let outcome: any;
+        const outcomes: any[] = [];
+
+        for (const token of tokens) {
+            if (this._dependencies.has(token)) {
+                outcomes.push(this._dependencies.get(token));
+            } else {
+                outcome = this._factories.get(token)?.(this);
+
+                if (outcome instanceof Promise) {
+                    try {
+                        await outcome;
+                    } catch (suppressed) {
+                        const error = new Error(`Factory failure for key "${token as any}"`);
+                        throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
+                    }
+                } else {
+                    outcomes.push(outcome);
+                }
+            }
+        }
+
+        return outcomes as any;
     }
 }
 
