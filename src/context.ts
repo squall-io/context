@@ -6,6 +6,15 @@ export class Context {
     private readonly _factories = new Map<Context.Key, (context: Context) => any>();
     private readonly _pendingDependencies = new Map<Context.Key, Promise<any>>();
     private readonly _dependencies = new Map<Context.Key, any>();
+    private readonly _parent?: Context;
+
+    static from(parent: Context): Context {
+        const context = new Context();
+        // @ts-expect-error: Cannot assign to '_parent' because it is a read-only property.ts(2540)
+        context._parent = parent;
+
+        return context;
+    }
 
     provide<KA extends readonly Context.Key[]>(keys: KA, ...factories: Context.Factories<KA>): this {
         for (let i = 0, l = keys.length; i < l; i++) {
