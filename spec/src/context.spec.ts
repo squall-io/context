@@ -14,7 +14,7 @@ describe('Context', () => {
             expect(error.name).toBe(Context.UNKNOWN_KEYS as any);
         });
 
-        it('to call factory once with context', async () => {
+        it('call factory once with context', async () => {
             const factorySpy = jasmine.createSpy('factorySpy');
             const timelapse: Context.Token<number> = Symbol();
 
@@ -23,7 +23,7 @@ describe('Context', () => {
             expect(factorySpy).toHaveBeenCalledOnceWith(context);
         });
 
-        it('to call factory once even if called multiple times', async () => {
+        it('call factory once even if called multiple times', async () => {
             const factorySpy = jasmine.createSpy('factorySpy');
             const timelapse: Context.Token<number> = Symbol();
 
@@ -33,7 +33,7 @@ describe('Context', () => {
             expect(factorySpy).toHaveBeenCalledOnceWith(context);
         });
 
-        it('to call factory once, throttling async calls for each async token', async () => {
+        it('call factory once, throttling async calls for each async token', async () => {
             // @ts-expect-error: Cannot find name 'setTimeout'.ts(2304)
             const value = new Promise(resolve => setTimeout(resolve, 100)).then(() => 44);
             const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
@@ -45,7 +45,7 @@ describe('Context', () => {
             expect(factorySpy).toHaveBeenCalledOnceWith(context);
         });
 
-        it('to return an array', async () => {
+        it('return an array', async () => {
             const factorySpy = jasmine.createSpy('factorySpy');
             const timelapse: Context.Token<number> = Symbol();
 
@@ -55,7 +55,7 @@ describe('Context', () => {
             expect(Array.isArray(dependencies)).toBeTrue();
         });
 
-        it(`to return an array with token's factory returned value`, async () => {
+        it(`return an array with token's factory returned value`, async () => {
             const value = Math.random();
             const timelapse: Context.Token<number> = Symbol();
             const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
@@ -66,7 +66,7 @@ describe('Context', () => {
             expect(dependencies[0]).toBe(value);
         });
 
-        it(`to return the same value for a given token, always`, async () => {
+        it(`return the same value for a given token, always`, async () => {
             const value = Math.random();
             const timelapse: Context.Token<number> = Symbol();
             const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
@@ -77,7 +77,7 @@ describe('Context', () => {
             expect(dependencies).toEqual([value, value, value]);
         });
 
-        it(`to return an array with tokens' factory returned values, in call site order`, async () => {
+        it(`return an array with tokens' factory returned values, in call site order`, async () => {
             const number = Math.random();
             const string = Math.random().toString(36);
             const timelapse: Context.Token<number> = Symbol();
