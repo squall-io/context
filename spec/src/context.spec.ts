@@ -36,5 +36,15 @@ describe('Context', () => {
 
             expect(factorySpy).toHaveBeenCalledOnceWith(context);
         });
+
+        it('to return an array', async () => {
+            const factorySpy = jasmine.createSpy('factorySpy');
+            const timelapse: Context.Token<number> = Symbol();
+
+            context.provide([timelapse], factorySpy);
+            const dependencies = await context.inject(timelapse);
+
+            expect(Array.isArray(dependencies)).toBeTrue()
+        });
     });
 });
