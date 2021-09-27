@@ -1,3 +1,13 @@
+/**
+ *
+ * **Context** - A class to help with dependency injection.
+ *
+ * See:
+ *
+ * + `static from(Context)`
+ * + `inject(...Contex.Key[]`
+ * + `provide(Contex.Key[], ...Context.Factory[])`
+ */
 export class Context {
     static readonly FACTORY_FAILURE = 'FACTORY_FAILURE';
     static readonly UNKNOWN_KEYS = 'UNKNOWN_KEYS';
@@ -8,6 +18,13 @@ export class Context {
     private readonly _dependencies = new Map<Context.Key, any>();
     private readonly _parent?: Context;
 
+    /**
+     *
+     * Create a child context, from a parent one.
+     *
+     * @param parent The parent context to the returned one.
+     * @returns A context which parent in the given one.
+     */
     static from(parent: Context): Context {
         const context = new Context();
         // @ts-expect-error: Cannot assign to '_parent' because it is a read-only property.ts(2540)
@@ -16,6 +33,14 @@ export class Context {
         return context;
     }
 
+    /**
+     *
+     * Provide this context with key/factory pairs, where factories allow for dependency resolution.
+     *
+     * @param keys An array of keys to provide factory functions for.
+     * @param factories A spread function, to compute dependencies, in the same order as keys.
+     * @returns A reference to the context on which the method was invoked.
+     */
     provide<KA extends readonly Context.Key[]>(keys: KA, ...factories: Context.Factories<KA>): this {
         for (let i = 0, l = keys.length; i < l; i++) {
             if (null === factories[i] && 'function' === typeof keys[i]) {
@@ -29,6 +54,13 @@ export class Context {
         return this;
     }
 
+    /**
+     *
+     * Resolve dependencies by key from this context or its ancestory hierarchy.
+     *
+     * @param keys The spread keys to dependencies to retrieve
+     * @returns An promise that resolve with an array of dependencies, matching the order of provided keys
+     */
     async inject<KA extends readonly Context.Key[]>(...keys: KA): Promise<Context.UnboxedKeys<KA>> {
         const unknownKeys = keys.filter(key => !this._factories.has(key));
 
