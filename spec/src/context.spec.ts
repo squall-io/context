@@ -125,6 +125,19 @@ describe('Context', () => {
             expect(error.name).toBe(Context.UNKNOWN_KEYS as any);
         });
 
+        it(`throw FACTORY_FAILURE when there is an error while executing a sync factory, even through parent hierarchy`, async () => {
+            let error: any;
+            const token = Symbol('errorToken');
+            const reason = Math.random().toString(36);
+
+            context.provide([token], () => { throw reason; });
+            await Context.from(context).inject(token).then(null, reason => error = reason);
+
+            expect(error).toBeInstanceOf(Error);
+            expect(error.suppressed).toBe(reason);
+            expect(error.name).toBe(Context.FACTORY_FAILURE as any);
+        });
+
         it(`resolve value if key is defined in parent constructor`, async () => {
             const parent: Context.Token<String> = Symbol('parentToken');
             const self: Context.Token<String> = Symbol('selfToken');
