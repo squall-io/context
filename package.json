@@ -8,6 +8,9 @@
     "jasmine-ts": "jasmine-ts"
   },
   "devDependencies": {
+    "@babel/cli": "^7.15.7",
+    "@babel/core": "^7.15.5",
+    "@babel/preset-typescript": "^7.15.0",
     "@types/jasmine": "^3.9.1",
     "jasmine": "^3.9.0",
     "jasmine-ts": "^0.4.0",
