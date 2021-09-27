@@ -1,5 +1,10 @@
 export class Context {
+    static readonly FACTORY_FAILURE = 'FACTORY_FAILURE';
+    static readonly UNKNOWN_TOKENS = 'UNKNOWN_TOKENS';
+
+    private readonly _error = (error: Error, name: string) => Object.assign(error, { name }) as Error;
     private readonly _factories = new WeakMap<Context.Key, (context: Context) => any>();
+    private readonly _dependencies = new WeakMap<Context.Key, any>();
 
     provide<KA extends readonly Context.Key[]>(tokens: KA, ...factories: Context.Factories<KA>): this {
         for (let i = 0, l = tokens.length; i < l; i++) {
@@ -13,6 +18,10 @@ export class Context {
 
         return this;
     }
+
+    async inject<KA extends readonly Context.Key[]>(...tokens: KA): Promise<Context.UnboxedKeys<KA>> {
+        throw new Error('not yet implemented');
+    }
 }
 
 export namespace Context {
@@ -22,6 +31,12 @@ export namespace Context {
 
     export type Constructor<T = any, D extends any[] = any[]> = {
         new(...dependencies: D): T;
+    };
+
+    export type UnboxedKey<K> = K extends Key<infer V> ? V : K;
+
+    export type UnboxedKeys<KA extends readonly Context.Key[]> = {
+        readonly [K in keyof KA]: UnboxedKey<KA[K]>;
     };
 
     export type UnboxedPromise<P> = P extends Promise<infer V> ? V : P;
