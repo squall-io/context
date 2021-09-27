@@ -5,9 +5,11 @@
   "license": "MIT",
   "scripts": {
     "build": "babel src --minified --source-maps --delete-dir-on-start --out-dir dist --extensions '.ts'",
+    "declare": "tsc --emitDeclarationOnly",
     "test": "jasmine-ts --dir spec",
     "jasmine-ts": "jasmine-ts",
-    "babel": "babel"
+    "babel": "babel",
+    "tsc": "tsc"
   },
   "devDependencies": {
     "@babel/cli": "^7.15.7",
