@@ -16,7 +16,7 @@ describe('Context', () => {
         });
 
         it('to call factory once even if called multiple times', async () => {
-            const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(1);
+            const factorySpy = jasmine.createSpy('factorySpy');
             const timelapse: Context.Token<number> = Symbol();
 
             context.provide([timelapse], factorySpy);
