@@ -1,4 +1,4 @@
-import { Context } from "../../src/context";
+import { Context } from './../../src/context';
 
 describe('Context', () => {
     beforeEach(() => context = new Context());
@@ -115,6 +115,20 @@ describe('Context', () => {
             const dependencies = await context.inject(timelapse, babelname);
 
             expect(dependencies).toEqual([number, string] as any);
+        });
+
+        it(`resolve value if key is defined in parent constructor`, async () => {
+            const parent: Context.Token<String> = Symbol('parentToken');
+            const self: Context.Token<String> = Symbol('selfToken');
+            const parentValue = Math.random().toString(36);
+            const selfValue = Math.random().toString(36);
+            const selfContext = Context.from(context);
+
+            context.provide([parent], () => parentValue);
+            selfContext.provide([self], () => selfValue);
+            const dependencies = await selfContext.inject(parent, self, self, parent);
+
+            expect(dependencies).toEqual([parentValue, selfValue, selfValue, parentValue]);
         });
     });
 
