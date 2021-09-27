@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "test": "jasmine-ts --dir spec",
+    "jasmine-ts": "jasmine-ts"
+  },
   "devDependencies": {
     "@types/jasmine": "^3.9.1",
     "jasmine": "^3.9.0",
