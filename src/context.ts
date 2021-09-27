@@ -43,7 +43,7 @@ export class Context {
                         this._dependencies.set(key, value);
                         return value;
                     }).catch(suppressed => {
-                        const error = new Error(`Factory failure for key "${key as any}"`);
+                        const error = new Error(`Factory failure for key "${key.toString() as any}"`);
                         throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
                     }));
                 } else {
