@@ -58,6 +58,17 @@ describe('Context', () => {
             expect(dependencies[0]).toBe(value);
         });
 
+        it(`to return the same value for a given token, always`, async () => {
+            const value = Math.random();
+            const timelapse: Context.Token<number> = Symbol();
+            const factorySpy = jasmine.createSpy('factorySpy').and.returnValue(value);
+
+            context.provide([timelapse], factorySpy);
+            const dependencies = await context.inject(timelapse, timelapse, timelapse);
+
+            expect(dependencies).toEqual([value, value, value]);
+        });
+
         it(`to return an array with tokens' factory returned values, in call site order`, async () => {
             const number = Math.random();
             const string = Math.random().toString(36);
