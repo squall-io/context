@@ -3,8 +3,8 @@ export class Context {
     static readonly UNKNOWN_TOKENS = 'UNKNOWN_TOKENS';
 
     private readonly _error = (error: Error, name: string) => Object.assign(error, { name }) as Error;
-    private readonly _factories = new WeakMap<Context.Key, (context: Context) => any>();
-    private readonly _dependencies = new WeakMap<Context.Key, any>();
+    private readonly _factories = new Map<Context.Key, (context: Context) => any>();
+    private readonly _dependencies = new Map<Context.Key, any>();
 
     provide<KA extends readonly Context.Key[]>(tokens: KA, ...factories: Context.Factories<KA>): this {
         for (let i = 0, l = tokens.length; i < l; i++) {
