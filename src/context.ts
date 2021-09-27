@@ -37,7 +37,7 @@ export class Context {
 
                 if (outcome instanceof Promise) {
                     try {
-                        await outcome;
+                        outcome = await outcome;
                     } catch (suppressed) {
                         const error = new Error(`Factory failure for key "${token as any}"`);
                         throw Object.assign(this._error(error, Context.FACTORY_FAILURE), { suppressed });
@@ -45,6 +45,8 @@ export class Context {
                 } else {
                     outcomes.push(outcome);
                 }
+
+                this._dependencies.set(token, outcome);
             }
         }
 
