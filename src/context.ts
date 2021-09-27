@@ -30,11 +30,27 @@ export class Context {
     }
 
     async inject<KA extends readonly Context.Key[]>(...keys: KA): Promise<Context.UnboxedKeys<KA>> {
-        const unknownKeys = keys.filter(key => !this._factories.has(key)).map(symbol => symbol.toString());
+        const unknownKeys = keys.filter(key => !this._factories.has(key));
 
         if (unknownKeys.length) {
-            const error = new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys}`);
-            throw this._error(error, Context.UNKNOWN_KEYS);
+            if (!this._parent) {
+                const error = new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys.map(symbol => symbol.toString())}`);
+                throw this._error(error, Context.UNKNOWN_KEYS);
+            } else {
+                const ownKeys = keys.filter(key => !unknownKeys.includes(key));
+                // NOTE: We don't use await. We want parents to throw soon as they have unknow keys
+                const fromParent = this._parent.inject(...unknownKeys);
+                const fromSelf = this.inject(...ownKeys);
+
+                return Promise.all([fromParent, fromSelf]).then(([fromParent, fromSelf]) => {
+                    return keys.map(key => {
+                        const index = unknownKeys.indexOf(key);
+
+                        if (0 <= index) return fromParent[index];
+                        else return fromSelf[ownKeys.indexOf(key)];
+                    });
+                }) as any;
+            }
         }
 
         return Promise.all(keys.map(key => {
