@@ -96,5 +96,18 @@ describe('Context', () => {
             expect(dependencies[0]).toBeInstanceOf(Criterion);
             expect(constructorSpy).toHaveBeenCalledOnceWith(context);
         });
+
+        it('create a factory for classes that accept context as their only contructor argument, if null-factory if provided', async () => {
+            // @ts-expect-error: A spread argument must either have a tuple type or be passed to a rest parameter.ts(2556)
+            const constructorSpy = jasmine.createSpy().and.callFake((...args) => new Criterion(...args));
+            class Criterion {}
+
+            context.provide([Criterion], constructorSpy);
+            const dependencies = await context.inject(Criterion, Criterion);
+
+            expect(dependencies[0]).toBe(dependencies[1]);
+            expect(dependencies[0]).toBeInstanceOf(Criterion);
+            expect(constructorSpy).toHaveBeenCalledOnceWith(context);
+        });
     })
 });
