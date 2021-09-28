@@ -33,4 +33,4 @@ WORKDIR /opt/app
 COPY --from=build /opt/app/dist .
 COPY .npmrc .
 
-RUN npm publish
+RUN npm publish --access public
