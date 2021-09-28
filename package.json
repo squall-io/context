@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
+  "keywords": ["dependency", "injection", "container", "testing"],
   "repository": {
     "type": "git",
     "url": "https://github.com/squall-io/context.git"
