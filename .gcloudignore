@@ -1,0 +1,8 @@
+/.vscode
+/.idea
+*.iml
+*.log
+*.error
+
+/node_modules
+/dist

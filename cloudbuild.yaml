@@ -1,0 +1,11 @@
+steps:
+  - name: gcr.io/cloud-builders/gcloud
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        NPM_TOKEN="$( gcloud secrets versions access latest --secret=NPM_TOKEN --format='get(payload.data)' )"
+        NPM_TOKEN="$( echo "$NPM_TOKEN" | tr '_-' '/+' | base64 -d )"
+        echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> .npmrc
+  - name: gcr.io/cloud-builders/docker
+    args: [ "build", "." ]
