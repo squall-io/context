@@ -151,6 +151,20 @@ describe('Context', () => {
 
             expect(dependencies).toEqual([parentValue, selfValue, selfValue, parentValue]);
         });
+
+        it(`valeu from child take precedence of parent contect`, async () => {
+            const parentFactorySpy = jasmine.createSpy('parentFactorySpy');
+            const token: Context.Token<String> = Symbol('value');
+            const value = Math.random().toString(36);
+            const child = Context.from(context);
+
+            child.provide([token], () => value);
+            context.provide([token], parentFactorySpy);
+            const dependencies = await child.inject(token);
+
+            expect(dependencies).toEqual([value]);
+            expect(parentFactorySpy).not.toHaveBeenCalled();
+        });
     });
 
     describe('#provide', () => {
