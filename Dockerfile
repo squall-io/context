@@ -27,6 +27,10 @@ RUN jq 'del(.devDependencies,.scripts)' package.json > dist/package.json
 #
 # {{deploy}}
 #
-FROM build AS deploy
+FROM node:alpine AS deploy
+WORKDIR /opt/app
+
 COPY --from=build /opt/app/dist .
+COPY .npmrc .
+
 RUN npm publish
