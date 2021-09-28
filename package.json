@@ -3,6 +3,10 @@
   "version": "0.0.1",
   "main": "index.js",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/squall-io/context.git"
+  },
   "scripts": {
     "build": "babel src --minified --source-maps --delete-dir-on-start --out-dir dist --extensions '.ts'",
     "declare": "tsc --emitDeclarationOnly",
