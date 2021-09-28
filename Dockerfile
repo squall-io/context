@@ -21,7 +21,7 @@ RUN yarn test
 FROM test AS build
 RUN apk add --no-cache jq
 RUN yarn build && yarn declare
-RUN cp README.md LICENSE yarn.lock ./dist
+RUN cp README.md LICENSE.md yarn.lock ./dist
 RUN jq 'del(.devDependencies,.scripts)' package.json > dist/package.json
 
 #
