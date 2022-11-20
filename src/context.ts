@@ -1,10 +1,3 @@
-// import ValueOrFactory = Context.ValueOrFactory;
-// import Configuration = Context.Configuration;
-// import InjectOptions = Context.InjectOptions;
-// import DeepPartial = Context.DeepPartial;
-// import Token = Context.Token;
-// import Value = Context.Value;
-
 export class Context {
     static readonly #DEFAULT_QUALIFIER = Symbol('DEFAULT_QUALIFIER');
     static readonly ERR_MISSING_TOKEN_QUALIFIER = 'MISSING_TOKEN_QUALIFIER';
