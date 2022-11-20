@@ -197,7 +197,7 @@ export class Context {
 export namespace Context {
     export type ValueOrFactory<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | { (context: Context): I }
         : T extends Constructor<infer I> ? I | { (context: Context): I }
-            : unknown | { (context: Context): unknown };
+            : { (context: Context): unknown }; // NOTE: (unknown | whatever) results in unknown
     export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
         : T extends Constructor<infer I> ? I
             : unknown;
