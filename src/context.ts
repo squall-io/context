@@ -67,7 +67,7 @@ export class Context {
         }
 
         if (!this.#configuration.factory.lazyValidation && (factory // In case of eager validation, Is it a factory?
-            ? this.#configuration.factory.lazyFunctionEvaluation    //  [YES] - Then, is it lazily evaluated?
+            ? !this.#configuration.factory.lazyFunctionEvaluation    //  [YES] - Then, is it lazily evaluated?
                 ? false                                             //      [YES] => No need validating the value
                 : Context.#isEmpty(value)                              //      [ NO] => Validate value
             : Context.#isEmpty(value))) {                              //  [ NO] - Validate value
