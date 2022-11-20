@@ -89,7 +89,7 @@ export class Context {
             for (const qualifier of qualifiers) {
                 this.#dependencies
                     .computeIfNotExists(token, () => new Context.FlexibleMap())
-                    ?.set(qualifier, factory);
+                    ?.set(qualifier, value);
             }
         }
 
