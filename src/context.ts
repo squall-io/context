@@ -31,8 +31,12 @@ export class Context {
         token: T, ...qualifiers: string[], valueOrFactory: Context.ValueOrFactory<T>]): this {
         const valueOrFactory = provider.pop() as Context.ValueOrFactory<T>;
         const qualifiers = provider as (string | symbol)[] ?? [];
-        qualifiers.push(Context.#DEFAULT_QUALIFIER);
         const token = provider.shift() as T;
+
+        if (0 === qualifiers.length) {
+            // TODO: feat <> Consider explicitly making primary bean definition, along aliases
+            qualifiers.push(Context.#DEFAULT_QUALIFIER);
+        }
 
         for (const qualifier of qualifiers) {
             if (this.#hasOwn(token, qualifier)) {
