@@ -1,147 +1,238 @@
-/**
- *
- * **Context** - A class to help with dependency injection.
- *
- * See:
- *
- * + `static from(Context)`
- * + `inject(...Contex.Key[]`
- * + `provide(Contex.Key[], ...Context.Factory[])`
- */
+// import ValueOrFactory = Context.ValueOrFactory;
+// import Configuration = Context.Configuration;
+// import InjectOptions = Context.InjectOptions;
+// import DeepPartial = Context.DeepPartial;
+// import Token = Context.Token;
+// import Value = Context.Value;
+
 export class Context {
-    static readonly FACTORY_FAILURE = 'FACTORY_FAILURE';
-    static readonly UNKNOWN_KEYS = 'UNKNOWN_KEYS';
+    static readonly #DEFAULT_QUALIFIER = Symbol('DEFAULT_QUALIFIER');
+    static readonly ERR_MISSING_TOKEN_QUALIFIER = 'MISSING_TOKEN_QUALIFIER';
+    static readonly ERR_DUPLICATE_FACTORY = 'DUPLICATE_FACTORY';
+    static readonly ERR_EMPTY_VALUE = 'EMPTY_VALUE';
 
-    readonly #error = (error: Error, name: string) => Object.assign(error, {name}) as Error;
-    readonly #factories = new Map<Context.Key, (context: Context) => any>();
-    readonly #pendingDependencies = new Map<Context.Key, Promise<any>>();
-    readonly #dependencies = new Map<Context.Key, any>();
-    #parent?: Context;
+    readonly #dependencies = new Context.FlexibleMap<Context.Token<any>, Context.FlexibleMap<string | symbol, any>>();
+    readonly #factories = new Context.FlexibleMap<Context.Token<any>,
+        Context.FlexibleMap<string | symbol, { (context: Context): unknown }>>();
+    readonly #configuration: Context.Configuration = {
+        factory: {
+            lazyFunctionEvaluation: false,
+            lazyValidation: false,
+        }
+    };
+    readonly #parents: Context[] = [];
 
-    /**
-     *
-     * Create a child context, from a parent one.
-     *
-     * @param parent The parent context to the returned one.
-     * @returns A context which parent in the given one.
-     */
-    static from(parent: Context): Context {
-        const context = new Context();
-        // @ts-expect-error: Cannot assign to '_parent' because it is a read-only property.ts(2540)
-        context.#parent = parent;
-
-        return context;
+    constructor(configurationOrParent?: Context | Context.DeepPartial<Context.Configuration>, ...parents: Context[]) {
+        if (configurationOrParent instanceof Context) {
+            this.#parents.push(configurationOrParent, ...parents);
+        } else if (configurationOrParent) {
+            this.#parents.push(...parents);
+            this.#configuration.factory.lazyValidation =
+                configurationOrParent.factory?.lazyValidation ?? false
+            this.#configuration.factory.lazyFunctionEvaluation =
+                configurationOrParent.factory?.lazyFunctionEvaluation ?? false
+        }
     }
 
-    /**
-     *
-     * Provide this context with key/factory pairs, where factories allow for dependency resolution.
-     *
-     * @param keys An array of keys to provide factory functions for.
-     * @param factories A spread function, to compute dependencies, in the same order as keys.
-     * @returns A reference to the context on which the method was invoked.
-     */
-    provide<KA extends readonly Context.Key[]>(keys: KA, ...factories: Context.Factories<KA>[]): this {
-        for (let i = 0, l = keys.length; i < l; i++) {
-            if (null === factories[i] && 'function' === typeof keys[i]) {
-                this.#factories.set(keys[i]!, () => Reflect.construct(keys[i]! as any, [this]));
-                continue;
-            }
+    provide<T extends Context.Token<any>>(...provider: [
+        token: T, ...qualifiers: string[], valueOrFactory: Context.ValueOrFactory<T>]): this {
+        const valueOrFactory = provider.pop() as Context.ValueOrFactory<T>;
+        const qualifiers = provider as (string | symbol)[] ?? [];
+        qualifiers.push(Context.#DEFAULT_QUALIFIER);
+        const token = provider.shift() as T;
 
-            this.#factories.set(keys[i]!, factories[i]!);
+        for (const qualifier of qualifiers) {
+            if (this.#hasOwn(token, qualifier)) {
+                throw new Error(Context.#format('{0}: Token<{1}> + Qualifier<{2}> duplicate factory found.',
+                    Context.ERR_DUPLICATE_FACTORY, Context.#tokenToString(token), Context.#tokenToString(qualifier)))
+            }
+        }
+
+        let [factory, value] = [
+            'function' === typeof valueOrFactory ? valueOrFactory as { (context: Context): unknown } : undefined,
+            'function' === typeof valueOrFactory ? undefined : valueOrFactory as unknown];
+
+        if (factory && !this.#configuration.factory.lazyFunctionEvaluation) {
+            value = factory(this);
+        }
+
+        if (Context.#isThenable(value)) {
+            value = value.then(value => {
+                if (Context.#isEmpty(value)) {
+                    throw new Error(Context.#format(
+                        '{0}: Token<{1}>/Qualifiers<{2}> resolved to an empty <{3}>.',
+                        Context.ERR_EMPTY_VALUE,
+                        Context.#tokenToString(token),
+                        qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '),
+                        value));
+                }
+            });
+        }
+
+        if (!this.#configuration.factory.lazyValidation && (factory // In case of eager validation, Is it a factory?
+            ? this.#configuration.factory.lazyFunctionEvaluation    //  [YES] - Then, is it lazily evaluated?
+                ? false                                             //      [YES] => No need validating the value
+                : Context.#isEmpty(value)                              //      [ NO] => Validate value
+            : Context.#isEmpty(value))) {                              //  [ NO] - Validate value
+            throw new Error(Context.#format('{0}: Token<{1}>/Qualifiers<{2}> resolved to an empty <{3}>.',
+                Context.ERR_EMPTY_VALUE, Context.#tokenToString(token),
+                qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '),
+                value));
+        }
+
+        if (factory) {
+            for (const qualifier of qualifiers) {
+                this.#factories
+                    .computeIfNotExists(token, () => new Context.FlexibleMap())
+                    ?.set(qualifier, factory);
+            }
+        }
+
+        if (value) {
+            for (const qualifier of qualifiers) {
+                this.#dependencies
+                    .computeIfNotExists(token, () => new Context.FlexibleMap())
+                    ?.set(qualifier, factory);
+            }
         }
 
         return this;
     }
 
-    /**
-     *
-     * Resolve dependencies by key from this context or its ancestory hierarchy.
-     *
-     * @param keys The spread keys to dependencies to retrieve
-     * @returns An promise that resolve with an array of dependencies, matching the order of provided keys
-     */
-    async inject<KA extends readonly Context.Key[]>(...keys: KA): Promise<Context.UnboxedKeys<KA>> {
-        const unknownKeys = keys.filter(key => !this.#factories.has(key));
+    inject<T extends Context.Token<any>>(token: T, qualifier?: string): Context.Value<T>;
+    inject<T extends Context.Token<any>>(token: T, injectOptions?: Context.InjectOptions): Context.Value<T>;
+    inject<T extends Context.Token<any>>(token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
+        const qualifier = ('string' === typeof qualifierOrInjectOptions
+            ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
+        const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
+            ? false : !!qualifierOrInjectOptions?.forceEvaluation;
+        const value = this.#resolve(token, qualifier, forceEvaluation);
 
-        if (unknownKeys.length) {
-            if (!this.#parent) {
-                const error = new Error(`Unknown keys (${unknownKeys.length}): ${unknownKeys.map(symbol => symbol.toString())}`);
-                throw this.#error(error, Context.UNKNOWN_KEYS);
+        if (Context.#isEmpty(value)) {
+            throw new Error(Context.#format('{0}: No candidates found for Token<{1}>/Qualifier<{2}>.',
+                Context.ERR_MISSING_TOKEN_QUALIFIER, Context.#tokenToString(token), Context.#tokenToString(qualifier)));
+        }
+
+        return value;
+    }
+
+    hasOwn(token: Context.Token<any>, qualifier?: string): boolean {
+        return this.#hasOwn(token, qualifier ?? Context.#DEFAULT_QUALIFIER)
+    }
+
+    has(token: Context.Token<any>, qualifier?: string): boolean {
+        return this.#has(token, qualifier ?? Context.#DEFAULT_QUALIFIER);
+    }
+
+    #resolve<T extends Context.Token<any>>(token: T, qualifier: string | symbol, forceEvaluation: boolean): Context.Value<T> {
+        let value = forceEvaluation ? undefined : this.#dependencies.get(token)?.get(qualifier);
+
+        if (Context.#isEmpty(value)) {
+            value = this.#factories.get(token)?.get(qualifier)?.(this);
+
+            if (Context.#isEmpty(value)) {
+                throw new Error(Context.#format('{0}: Token<{1}> + Qualifier<{2}> resolved to an empty <{3}>.',
+                    Context.ERR_EMPTY_VALUE, Context.#tokenToString(token), Context.#tokenToString(qualifier), value));
+            } else if (Context.#isThenable(value)) {
+                value = value.then(value => {
+                    if (Context.#isEmpty(value)) {
+                        throw new Error(Context.#format(
+                            '{0}: Token<{1}> + Qualifier<{2}> resolved to an empty <{3}>.',
+                            Context.ERR_EMPTY_VALUE, Context.#tokenToString(token),
+                            Context.#tokenToString(qualifier), value));
+                    }
+                });
+            }
+
+            if (Context.#isEmpty(value)) {
+                for (const parent of this.#parents.reverse()) {
+                    if (!Context.#isEmpty(value = parent.#resolve(token, qualifier, forceEvaluation))) {
+                        return value;
+                    }
+                }
             } else {
-                const ownKeys = keys.filter(key => !unknownKeys.includes(key));
-                // NOTE: We don't use await. We want parents to throw soon as they have unknow keys
-                const fromParent = this.#parent.inject(...unknownKeys);
-                const fromSelf = this.inject(...ownKeys);
-
-                return Promise.all([fromParent, fromSelf]).then(([fromParent, fromSelf]) => {
-                    return keys.map(key => {
-                        const index = unknownKeys.indexOf(key);
-
-                        if (0 <= index) return fromParent[index];
-                        else return fromSelf[ownKeys.indexOf(key)];
-                    });
-                }) as any;
+                this.#dependencies
+                    .computeIfNotExists(token, () => new Context.FlexibleMap())
+                    ?.set(qualifier, value);
             }
         }
 
-        return Promise.all(keys.map(key => {
-            if (this.#dependencies.has(key)) {
-                return this.#dependencies.get(key);
-            } else if (this.#pendingDependencies.has(key)) {
-                // NOTE: No error handling, because promise not created here
-                return this.#pendingDependencies.get(key);
-            } else {
-                try {
-                    let outcome = this.#factories.get(key)?.(this);
+        return value;
+    }
 
-                    if (outcome instanceof Promise) {
-                        this.#pendingDependencies.set(key, outcome = outcome.then(value => {
-                            this.#pendingDependencies.delete(key);
-                            this.#dependencies.set(key, value);
-                            return value;
-                        }).catch(suppressed => {
-                            const error = new Error(`Factory failure for key "${key.toString() as any}"`);
-                            throw Object.assign(this.#error(error, Context.FACTORY_FAILURE), {suppressed});
-                        }));
-                    } else {
-                        this.#dependencies.set(key, outcome);
-                    }
+    #hasOwn(token: Context.Token<any>, qualifier?: string | symbol): boolean {
+        return (this.#dependencies.has(token) && (!qualifier || this.#dependencies.get(token)!.has(qualifier))) ||
+            (this.#factories.has(token) && (!qualifier || this.#factories.get(token)!.has(qualifier)));
+    }
 
-                    return outcome;
-                } catch (suppressed) {
-                    const error = new Error(`Factory failure for key "${key.toString() as any}"`);
-                    throw Object.assign(this.#error(error, Context.FACTORY_FAILURE), {suppressed});
-                }
-            }
-        })) as any;
+    #has(token: Context.Token<any>, qualifier?: string | symbol): boolean {
+        return this.#hasOwn(token, qualifier) ||
+            this.#parents.some(parent => parent.#has(token, qualifier));
+    }
+
+    static #format(template: string, ...values: any[]): string {
+        const PLACEHOLDERS = [...template.matchAll(/\{(0|[1-9]\d*)}/g)];
+
+        return template.split(/\{(?:0|[1-9]\d*)}/g)
+            .map((chunk, i) => [chunk, PLACEHOLDERS[i]?.[1]])
+            .map(([chunk, index]) => chunk + (index ? values[+index] : ''))
+            .join('')
+    }
+
+    static #isThenable(value: any): value is Promise<unknown> {
+        return 'object' === typeof value && 'then' in value &&
+            'function' === typeof value['then'];
+    }
+
+    static #tokenToString(token: Context.Token<any>): string {
+        return 'symbol' === typeof token
+            ? `Symbol(${token.description})`
+            : 'function' === typeof token
+                ? `class ${token.name}`
+                : token;
+    }
+
+    static #isEmpty(value: any): value is null | undefined {
+        return null === value || undefined === value;
     }
 }
 
 export namespace Context {
-    export type Key<T = any> = Token<T> | Constructor<T>;
-
-    export type Token<T = any> = symbol & Record<never, T>;
-
-    export type Constructor<T = any, D extends any[] = any[]> = {
-        new(...dependencies: D): T;
+    export type ValueOrFactory<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | { (context: Context): I }
+        : T extends Constructor<infer I> ? I | { (context: Context): I }
+            : unknown | { (context: Context): unknown };
+    export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
+        : T extends Constructor<infer I> ? I
+            : unknown;
+    export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
+    export type Constructor<T> = { new(...parameters: any[]): T };
+    export type TokenSymbol<T> = symbol & Record<never, T>;
+    export type DeepPartial<T> = T extends (null | undefined | boolean | number | string) ? T : {
+        [K in keyof T]?: DeepPartial<T[K]>;
+    };
+    export type InjectOptions = {
+        forceEvaluation?: boolean;
+        qualifier?: string;
     };
 
-    export type UnboxedKey<K> = K extends Key<infer V> ? V : K;
+    export interface Configuration {
+        factory: {
+            lazyFunctionEvaluation: boolean;
+            lazyValidation: boolean;
+        };
+    }
 
-    export type UnboxedKeys<KA extends readonly Context.Key[]> = {
-        readonly [K in keyof KA]: UnboxedKey<KA[K]>;
-    };
+    export class FlexibleMap<K, V> extends Map<K, V> {
+        computeIfNotExists(key: K, computer: { (key: K): V | undefined }): V | undefined | null {
+            if (!this.has(key)) {
+                const value = computer(key);
 
-    export type UnboxedPromise<P> = P extends Promise<infer V> ? V : P;
+                if (undefined !== value && null !== value) {
+                    this.set(key, value);
+                }
+            }
 
-    export type Factories<KA extends readonly Context.Key[]> = {
-        readonly [K in keyof KA]: KA[K] extends Token<infer I> ? Factory<I>
-            : KA[K] extends Constructor<infer I, [Context]> ? null | Factory<I>
-                : KA[K] extends Constructor<infer I> ? Factory<I>
-                    : never;
-    };
-
-    export type Factory<I = any> = (context: Context) =>
-        Context.UnboxedPromise<I> | Promise<Context.UnboxedPromise<I>>;
+            return this.get(key);
+        }
+    }
 }
