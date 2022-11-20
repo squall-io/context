@@ -21,8 +21,8 @@
     "build-es5": "yarpm run build --out-dir dist/es5 src",
     "build": "babel --minified --source-maps --delete-dir-on-start --extensions '.ts'",
     "declare": "tsc --emitDeclarationOnly",
-    "test": "jasmine-ts --dir spec",
-    "jasmine-ts": "jasmine-ts",
+    "test": "jasmine",
+    "jasmine": "jasmine",
     "babel": "babel",
     "tsc": "tsc"
   },
