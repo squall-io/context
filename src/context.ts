@@ -296,8 +296,9 @@ export class Context {
     }
 
     static #isThenable(value: any): value is Promise<unknown> {
-        return 'object' === typeof value && 'then' in value &&
-            'function' === typeof value['then'];
+        return value && 'object' === typeof value   // Is object but not null
+            && 'then' in value                      // Has a 'then' property
+            && 'function' === typeof value['then']; // That property maps to a function
     }
 
     static #tokenToString(token: Context.Token<any> | undefined): string {
