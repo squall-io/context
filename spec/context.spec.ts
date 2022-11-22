@@ -2,6 +2,30 @@ import {Context} from '@squall.io/context';
 import createSpy = jasmine.createSpy;
 
 describe('Context', () => {
+    describe('.has', () => {
+        it('(token)', function () {
+            expect(new Context()
+                .has('HOST')).toBeFalse();
+            expect(new Context()
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST')).toBeFalse();
+            expect(new Context(
+                new Context().provide('HEIST', () => 'La Casa de Papel'))
+                .has('HOST')).toBeFalse();
+
+            expect(new Context()
+                .provide('HOST', () => 'localhost')
+                .has('HOST')).toBeTrue();
+            expect(new Context()
+                .provide('HOST', () => 'localhost')
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST')).toBeTrue();
+            expect(new Context(
+                new Context().provide('HOST', () => 'localhost'))
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST')).toBeTrue();
+        });
+    });
     describe('orphan', () => {
         it('inject string token', () => {
             const context = new Context();
