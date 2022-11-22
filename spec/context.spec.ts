@@ -10,10 +10,12 @@ describe('Context', () => {
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeFalse();
             expect(new Context(
-                new Context().provide('HEIST', () => 'La Casa de Papel'))
+                new Context()
+                    .provide('HEIST', () => 'La Casa de Papel'))
                 .has('HOST')).toBeFalse();
             expect(new Context(
-                new Context().provide('HEIST', () => 'La Casa de Papel'))
+                new Context()
+                    .provide('HEIST', () => 'La Casa de Papel'))
                 .provide('HOST', 'okay', 'why-not', () => 'La Casa de Papel')
                 .has('HOST')).toBeFalse();
 
@@ -25,14 +27,16 @@ describe('Context', () => {
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
             expect(new Context(
-                new Context().provide('HOST', () => 'localhost'))
+                new Context()
+                    .provide('HOST', () => 'localhost'))
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
             expect(new Context()
                 .provide('HOST', 'okay', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
             expect(new Context(
-                new Context().provide('HOST', 'okay', () => 'localhost'))
+                new Context()
+                    .provide('HOST', 'okay', () => 'localhost'))
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
         });
