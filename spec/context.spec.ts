@@ -29,6 +29,32 @@ describe('Context', () => {
                 .provide('address', 'here', () => 'Earth')
                 .hasOwn('address')).toBeTrue();
         });
+
+        it('(token, qualifier)', function () {
+            expect(new Context()
+                .hasOwn('address', 'here')).toBeFalse();
+            expect(new Context()
+                .provide('address', () => 'Earth')
+                .hasOwn('address', 'here')).toBeFalse();
+            expect(new Context(
+                new Context())
+                .hasOwn('address', 'here')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('address', () => 'Earth'))
+                .hasOwn('address', 'here')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('address', 'here', () => 'Earth'))
+                .hasOwn('address', 'here')).toBeFalse();
+
+            expect(new Context()
+                .provide('address', 'here', () => 'Earth')
+                .hasOwn('address', 'here')).toBeTrue();
+            expect(new Context()
+                .provide('address', 'here', 'around', () => 'Earth')
+                .hasOwn('address', 'here')).toBeTrue();
+        });
     });
 
     describe('.has', () => {
