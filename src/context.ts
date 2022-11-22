@@ -1,7 +1,8 @@
 export class Context {
     static readonly #DEFAULT_QUALIFIER = Symbol('DEFAULT_QUALIFIER');
-    static readonly ERR_MISSING_TOKEN_QUALIFIER = 'MISSING_TOKEN_QUALIFIER';
     static readonly ERR_DUPLICATE_FACTORY = 'DUPLICATE_FACTORY';
+    static readonly ERR_UNDECIDABLE_BEAN = 'UNDECIDABLE_BEAN';
+    static readonly ERR_MISSING_TOKEN = 'MISSING_TOKEN';
     static readonly ERR_EMPTY_VALUE = 'EMPTY_VALUE';
 
     readonly #dependencies = new Context.FlexibleMap<Context.Token<any>, Context.FlexibleMap<string | symbol, any>>();
@@ -95,21 +96,68 @@ export class Context {
         return this;
     }
 
-    inject<T extends Context.Token<any>>(token: T, qualifier?: string): Context.Value<T>;
+    inject<T extends Context.Token<any>>(token: T): Context.Value<T>; // TODO: Document undecidable bean error
+    inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, injectOptions?: Context.InjectOptions): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
         const qualifier = ('string' === typeof qualifierOrInjectOptions
             ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
         const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
             ? false : !!qualifierOrInjectOptions?.forceEvaluation;
-        const value = this.#resolve(token, qualifier, forceEvaluation);
+        const undecided = new Set<string | symbol>();
+        let context: Context | undefined = undefined;
+        let value: unknown;
 
-        if (Context.#isEmpty(value)) {
-            throw new Error(Context.#format('{0}: No candidates found for Token<{1}>/Qualifier<{2}>.',
-                Context.ERR_MISSING_TOKEN_QUALIFIER, Context.#tokenToString(token), Context.#tokenToString(qualifier)));
+        if (forceEvaluation) {
+            // TODO: Beside forcing factory evaluation (prototype bean),
+            //       Should we allow caching the result, maybe by context on which is was called?
+            const factoryWithContext = this.#resolveFactory(token, qualifier, undecided);
+
+            [value] = Context.#validValue([
+                factoryWithContext?.[0]?.(this),
+                factoryWithContext?.[1]!
+            ], token, qualifier) ?? [undefined, undefined];
+
+            if (Context.#isEmpty(value)) {
+                [value] = this.#resolveValue(token, qualifier, undecided) ?? [undefined, undefined];
+            }
+        } else {
+            [value, context] = this.#resolveValue(token, qualifier, undecided) ?? [undefined, undefined];
+
+            if (Context.#isEmpty(value)) {
+                const factoryWithContext = this.#resolveFactory(token, qualifier, undecided);
+
+                [value, context] = Context.#validValue([
+                    factoryWithContext?.[0]?.(this),
+                    factoryWithContext?.[1]!
+                ], token, qualifier) ?? [undefined, undefined];
+
+                if (!Context.#isEmpty(value)) {
+                    context!.#dependencies
+                        .computeIfNotExists(token, () => new Context.FlexibleMap())
+                        ?.set(qualifier, value)
+                }
+            }
         }
 
-        return value;
+        if (0 < undecided.size) {
+            // NOTE: Context.#DEFAULT_QUALIFIER is implied: see how the set if filled in
+            throw new Error(Context.#format(
+                '{0}: Undecidable bean for Token<{1}>.',
+                Context.ERR_UNDECIDABLE_BEAN, Context.#tokenToString(token)));
+        } else if (Context.#isEmpty(value)) {
+            if (Context.#DEFAULT_QUALIFIER == qualifier) {
+                throw new Error(Context.#format(
+                    '{0}: No bean nor bean-factory provided for Token<{1}>.',
+                    Context.ERR_MISSING_TOKEN, Context.#tokenToString(token)));
+            } else {
+                throw new Error(Context.#format(
+                    '{0}: No bean nor bean-factory provided for Token<{1}> Qualifier<{2}>.',
+                    Context.ERR_MISSING_TOKEN, Context.#tokenToString(token), qualifier));
+            }
+        }
+
+        return value as Context.Value<T>;
     }
 
     hasOwn(token: Context.Token<any>, qualifier?: string): boolean {
@@ -120,50 +168,121 @@ export class Context {
         return this.#has(token, qualifier ?? Context.#DEFAULT_QUALIFIER);
     }
 
-    #resolve<T extends Context.Token<any>>(token: T, qualifier: string | symbol, forceEvaluation: boolean): Context.Value<T> {
-        let value = forceEvaluation ? undefined : this.#dependencies.get(token)?.get(qualifier);
+    #resolveFactory(token: Context.Token<any>, qualifier: string | symbol,
+                    undecided = new Set<string | symbol>()
+    ): [factory: { (context: Context): unknown } | undefined, context: Context] | void {
+        const factories = this.#factories.get(token);
 
-        if (Context.#isEmpty(value)) {
-            value = this.#factories.get(token)?.get(qualifier)?.(this);
-
-            if (Context.#isEmpty(value)) {
-                throw new Error(Context.#format('{0}: Token<{1}> + Qualifier<{2}> resolved to an empty <{3}>.',
-                    Context.ERR_EMPTY_VALUE, Context.#tokenToString(token), Context.#tokenToString(qualifier), value));
-            } else if (Context.#isThenable(value)) {
-                value = value.then(value => {
-                    if (Context.#isEmpty(value)) {
-                        throw new Error(Context.#format(
-                            '{0}: Token<{1}> + Qualifier<{2}> resolved to an empty <{3}>.',
-                            Context.ERR_EMPTY_VALUE, Context.#tokenToString(token),
-                            Context.#tokenToString(qualifier), value));
-                    }
-                });
-            }
-
-            if (Context.#isEmpty(value)) {
-                for (const parent of this.#parents.reverse()) {
-                    if (!Context.#isEmpty(value = parent.#resolve(token, qualifier, forceEvaluation))) {
-                        return value;
+        if (factories) {
+            if (factories.has(qualifier)) {
+                return [factories.get(qualifier), this];
+            } else if (Context.#DEFAULT_QUALIFIER === qualifier) {
+                if (1 == factories.size) {
+                    return [factories.get([...factories.keys()][0] as string | symbol), this];
+                } else if (0 < factories.size) {
+                    for (let key of factories.keys()) {
+                        undecided.add(key);
                     }
                 }
-            } else {
-                this.#dependencies
-                    .computeIfNotExists(token, () => new Context.FlexibleMap())
-                    ?.set(qualifier, value);
             }
         }
 
-        return value;
+        for (const parent of this.#parents.reverse()) {
+            const factoryWithContext = parent.#resolveFactory(token, qualifier, undecided);
+
+            if (factoryWithContext?.[0]) return factoryWithContext;
+        }
     }
 
-    #hasOwn(token: Context.Token<any>, qualifier?: string | symbol): boolean {
-        return (this.#dependencies.has(token) && (!qualifier || this.#dependencies.get(token)!.has(qualifier))) ||
-            (this.#factories.has(token) && (!qualifier || this.#factories.get(token)!.has(qualifier)));
+    #resolveValue(token: Context.Token<any>, qualifier: string | symbol,
+                  undecided = new Set<string | symbol>()
+    ): [value: unknown, context: Context] | void {
+        const dependencies = this.#dependencies.get(token);
+
+        if (dependencies) {
+            if (dependencies.has(qualifier)) {
+                // const value = Context.#validValue(dependencies.get(qualifier), token, Context.#DEFAULT_QUALIFIER);
+                // return [value, this];
+
+                return [dependencies.get(qualifier), this];
+            } else if (Context.#DEFAULT_QUALIFIER === qualifier) {
+                if (1 == dependencies.size) {
+                    // const value = Context.#validValue(
+                    //     dependencies.get([...dependencies.keys()][0] as string | symbol), token, qualifier);
+                    // return [value, this];
+
+                    return [dependencies.get([...dependencies.keys()][0] as string | symbol), this];
+                } else if (0 < dependencies.size) {
+                    for (let key of dependencies.keys()) {
+                        undecided.add(key);
+                    }
+                }
+            }
+        }
+
+        for (const parent of this.#parents.reverse()) {
+            const valueWithContext = parent.#resolveValue(token, qualifier, undecided);
+
+            if (valueWithContext?.[0]) return valueWithContext;
+        }
+
+        return;
     }
 
-    #has(token: Context.Token<any>, qualifier?: string | symbol): boolean {
+    #hasOwn(token: Context.Token<any>, qualifier: string | symbol): boolean {
+        if (this.#dependencies.has(token)) {
+            const dependencies = this.#dependencies.get(token);
+
+            if (Context.#DEFAULT_QUALIFIER === qualifier) {
+                return dependencies?.has?.(qualifier) || 1 === dependencies?.size;
+            } else {
+                return !!dependencies?.has?.(qualifier);
+            }
+        } else if (this.#factories.has(token)) {
+            const factories = this.#factories.get(token);
+
+            if (Context.#DEFAULT_QUALIFIER === qualifier) {
+                return factories?.has?.(qualifier) || 1 === factories?.size;
+            } else {
+                return !!factories?.has?.(qualifier);
+            }
+        }
+
+        return false;
+    }
+
+    #has(token: Context.Token<any>, qualifier: string | symbol): boolean {
         return this.#hasOwn(token, qualifier) ||
+            // NOTE: No need to reverse parent just for the check
             this.#parents.some(parent => parent.#has(token, qualifier));
+    }
+
+    static #validValue<V>(valueWithContext: [V, Context] | void,
+                          token: Context.Token<any>, qualifier: string | symbol): [V, Context] | void {
+        if (this.#isEmpty(valueWithContext?.[0])) {
+            if (!valueWithContext?.[1]) {
+                throw new Error(Context.#format(
+                    '{0}: Empty value ({1}) resolved for Token<{2}>{3}.',
+                    Context.ERR_MISSING_TOKEN, valueWithContext?.[0], Context.#tokenToString(token),
+                    Context.#DEFAULT_QUALIFIER === qualifier
+                        ? '' : Context.#format(' Qualifier<{0}>', qualifier)));
+            } else if (Context.#DEFAULT_QUALIFIER === qualifier) {
+                throw new Error(Context.#format(
+                    '{0}: Empty value ({1}) resolved for Token<{2}>.',
+                    Context.ERR_EMPTY_VALUE, valueWithContext?.[0], Context.#tokenToString(token)));
+            } else {
+                throw new Error(Context.#format(
+                    '{0}: Empty value ({1}) resolved for Token<{2}> Qualifier<{3}>.',
+                    Context.ERR_EMPTY_VALUE, valueWithContext?.[0], Context.#tokenToString(token), qualifier));
+            }
+        } else if (this.#isThenable(valueWithContext?.[0])) {
+            const thenable = valueWithContext?.[0]
+                .then?.(target => this.#validValue([target, valueWithContext?.[1]], token, qualifier)?.[0]);
+
+            return [thenable as V, valueWithContext?.[1]!];
+        }
+
+        return valueWithContext;
     }
 
     static #format(template: string, ...values: any[]): string {
