@@ -12,6 +12,10 @@ describe('Context', () => {
             expect(new Context(
                 new Context().provide('HEIST', () => 'La Casa de Papel'))
                 .has('HOST')).toBeFalse();
+            expect(new Context(
+                new Context().provide('HEIST', () => 'La Casa de Papel'))
+                .provide('HOST', 'okay', 'why-not', () => 'La Casa de Papel')
+                .has('HOST')).toBeFalse();
 
             expect(new Context()
                 .provide('HOST', () => 'localhost')
@@ -22,6 +26,13 @@ describe('Context', () => {
                 .has('HOST')).toBeTrue();
             expect(new Context(
                 new Context().provide('HOST', () => 'localhost'))
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST')).toBeTrue();
+            expect(new Context()
+                .provide('HOST', 'okay', () => 'La Casa de Papel')
+                .has('HOST')).toBeTrue();
+            expect(new Context(
+                new Context().provide('HOST', 'okay', () => 'localhost'))
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
         });
