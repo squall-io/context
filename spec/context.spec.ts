@@ -14,9 +14,8 @@ describe('Context', () => {
             expect(factorySpy).withContext('Factory never evaluated.').toHaveBeenCalledOnceWith(context);
             expect(context.inject('primary', 'a')).toBe(expected);
             expect(factorySpy).withContext('Factory never eagerly.').toHaveBeenCalledOnceWith(context);
-            expect(() => context.inject('a')).toThrowMatching(thrown =>
-                // FIXME: Should be missing token
-                thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            expect(() => context.inject('a')).toThrowMatching((thrown: unknown) =>
+                thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
             expect(factorySpy).withContext('Factory never eagerly.').toHaveBeenCalledOnceWith(context);
         });
     });
