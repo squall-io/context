@@ -300,12 +300,12 @@ export class Context {
             'function' === typeof value['then'];
     }
 
-    static #tokenToString(token: Context.Token<any>): string {
+    static #tokenToString(token: Context.Token<any> | undefined): string {
         return 'symbol' === typeof token
             ? `Symbol(${token.description})`
             : 'function' === typeof token
                 ? `class ${token.name}`
-                : token;
+                : token || `JavaScript::${token}`;
     }
 
     static #isEmpty(value: any): value is null | undefined {
