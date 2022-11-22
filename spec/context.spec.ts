@@ -2,6 +2,35 @@ import {Context} from '@squall.io/context';
 import createSpy = jasmine.createSpy;
 
 describe('Context', () => {
+    describe('.hasOwn', () => {
+        it('(token)', function () {
+            expect(new Context()
+                .hasOwn('address')).toBeFalse();
+            expect(new Context()
+                .provide('address', 'here', 'around', () => 'Earth')
+                .hasOwn('address')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('address', () => 'Earth'))
+                .hasOwn('address')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('address', 'here', () => 'Earth'))
+                .hasOwn('address')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('address', 'here', 'around', () => 'Earth'))
+                .hasOwn('address')).toBeFalse();
+
+            expect(new Context()
+                .provide('address', () => 'Earth')
+                .hasOwn('address')).toBeTrue();
+            expect(new Context()
+                .provide('address', 'here', () => 'Earth')
+                .hasOwn('address')).toBeTrue();
+        });
+    });
+
     describe('.has', () => {
         it('(token)', function () {
             expect(new Context()
