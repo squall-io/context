@@ -40,6 +40,56 @@ describe('Context', () => {
                 .provide('HEIST', () => 'La Casa de Papel')
                 .has('HOST')).toBeTrue();
         });
+
+        it('(token, qualifier)', function () {
+            expect(new Context()
+                .has('HOST', 'okay')).toBeFalse();
+            expect(new Context()
+                .provide('HOST', () => 'localhost')
+                .has('HOST', 'okay')).toBeFalse();
+            expect(new Context()
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST', 'okay')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('HEIST', () => 'La Casa de Papel'))
+                .has('HOST', 'okay')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('HEIST', () => 'La Casa de Papel')
+                    .provide('HOST', () => 'localhost'))
+                .has('HOST', 'okay')).toBeFalse();
+            expect(new Context(
+                new Context()
+                    .provide('HEIST', () => 'La Casa de Papel'))
+                .provide('HOST', 'good-enough', 'why-not', () => 'La Casa de Papel')
+                .has('HOST', 'okay')).toBeFalse();
+
+            expect(new Context()
+                .provide('HOST', 'okay', () => 'localhost')
+                .has('HOST', 'okay')).toBeTrue();
+            expect(new Context()
+                .provide('HOST', 'okay', () => 'localhost')
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST', 'okay')).toBeTrue();
+            expect(new Context(
+                new Context()
+                    .provide('HOST', 'okay', () => 'localhost'))
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST')).toBeTrue();
+            expect(new Context(
+                new Context()
+                    .provide('HOST', 'okay', () => 'localhost'))
+                .provide('HOST', () => 'localhost')
+                .has('HOST', 'okay')).toBeTrue();
+            expect(new Context(
+                new Context()
+                    .provide('HOST', 'okay', () => 'localhost'),
+                new Context()
+                    .provide('HOST', 'why-not', () => 'localhost'))
+                .provide('HEIST', () => 'La Casa de Papel')
+                .has('HOST', 'okay')).toBeTrue();
+        });
     });
     describe('orphan', () => {
         it('inject string token', () => {
