@@ -34,7 +34,6 @@ export class Context {
         const token = provider.shift() as T;
 
         if (0 === qualifiers.length) {
-            // TODO: feat <> Consider explicitly making primary bean definition, along aliases
             qualifiers.push(Context.#DEFAULT_QUALIFIER);
         }
 
