@@ -40,8 +40,11 @@ export class Context {
 
         for (const qualifier of qualifiers) {
             if (this.#hasOwn(token, qualifier)) {
-                throw new Error(Context.#format('{0}: Token<{1}> + Qualifier<{2}> duplicate factory found.',
-                    Context.ERR_DUPLICATE_FACTORY, Context.#tokenToString(token), Context.#tokenToString(qualifier)))
+                throw new Error(Context.#format(
+                    '{0}: Duplicate bean definition for Token<{1}>{2}.',
+                    Context.ERR_DUPLICATE_FACTORY, Context.#tokenToString(token),
+                    Context.#DEFAULT_QUALIFIER === qualifier
+                        ? '' : Context.#format(' Qualifier<{0}>', qualifier)));
             }
         }
 
@@ -58,23 +61,21 @@ export class Context {
                 if (Context.#isEmpty(value)) {
                     throw new Error(Context.#format(
                         '{0}: Token<{1}>/Qualifiers<{2}> resolved to an empty <{3}>.',
-                        Context.ERR_EMPTY_VALUE,
-                        Context.#tokenToString(token),
-                        qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '),
-                        value));
+                        Context.ERR_EMPTY_VALUE, Context.#tokenToString(token),
+                        qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '), value));
                 }
             });
         }
 
         if (!this.#configuration.factory.lazyValidation && (factory // In case of eager validation, Is it a factory?
-            ? !this.#configuration.factory.lazyFunctionEvaluation    //  [YES] - Then, is it lazily evaluated?
+            ? !this.#configuration.factory.lazyFunctionEvaluation   //  [YES] - Then, is it lazily evaluated?
                 ? false                                             //      [YES] => No need validating the value
-                : Context.#isEmpty(value)                              //      [ NO] => Validate value
-            : Context.#isEmpty(value))) {                              //  [ NO] - Validate value
-            throw new Error(Context.#format('{0}: Token<{1}>/Qualifiers<{2}> resolved to an empty <{3}>.',
+                : Context.#isEmpty(value)                           //      [ NO] => Validate value
+            : Context.#isEmpty(value))) {                           //  [ NO] - Validate value
+            throw new Error(Context.#format(
+                '{0}: Token<{1}>/Qualifiers<{2}> resolved to an empty <{3}>.',
                 Context.ERR_EMPTY_VALUE, Context.#tokenToString(token),
-                qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '),
-                value));
+                qualifiers.map(qualifier => Context.#tokenToString(qualifier)).join(', '), value));
         }
 
         if (factory) {
