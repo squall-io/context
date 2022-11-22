@@ -22,9 +22,9 @@ export class Context {
         } else if (configurationOrParent) {
             this.#parents.push(...parents);
             this.#configuration.factory.lazyValidation =
-                configurationOrParent.factory?.lazyValidation ?? false
+                configurationOrParent.factory?.lazyValidation ?? false;
             this.#configuration.factory.lazyFunctionEvaluation =
-                configurationOrParent.factory?.lazyFunctionEvaluation ?? false
+                configurationOrParent.factory?.lazyFunctionEvaluation ?? false;
         }
     }
 
