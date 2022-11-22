@@ -311,7 +311,7 @@ describe('Context', () => {
                 const parents = [new Context(), new Context()];
                 const context = new Context(...parents);
 
-                context.provide('target', 'primary',() => '');
+                context.provide('target', 'primary', () => '');
 
                 expect(context.hasOwn('target', 'primary')).toBeTrue();
                 expect(parents.every(parent => !parent.hasOwn('target', 'primary'))).toBeTrue();
@@ -412,6 +412,172 @@ describe('Context', () => {
                 expect(() => new Context()
                     .provide('address', 'primary', 'write-candidate', () => 'Earth')
                     .provide('address', 'primary', () => 'Earth')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+            });
+        });
+
+        describe('(token: Class, ...qualifiers?, factory)', () => {
+            it('return a reference to invoked context', () => {
+                class Nothing {
+                }
+
+                const contextOne = new Context();
+                expect(contextOne.provide(Nothing, () => new Nothing())).toBe(contextOne);
+
+                const contextTwo = new Context(contextOne);
+                expect(contextTwo.provide(Nothing, () => new Nothing())).toBe(contextTwo);
+
+                const contextThree = new Context(contextOne, contextTwo);
+                expect(contextThree.provide(Nothing, () => new Nothing())).toBe(contextThree);
+            });
+
+            it('register token', () => {
+                class Nothing {
+                }
+
+                expect(new Context()
+                    .provide(Nothing, () => new Nothing())
+                    .hasOwn(Nothing)).toBeTrue();
+            });
+
+            it('register token at invoked context', () => {
+                const parents = [new Context(), new Context()];
+                const context = new Context(...parents);
+
+                class Nothing {
+                }
+
+                context.provide(Nothing, () => new Nothing());
+
+                expect(context.hasOwn(Nothing)).toBeTrue();
+                expect(parents.every(parent => !parent.hasOwn(Nothing))).toBeTrue();
+            });
+
+            it('invoke factory function', () => {
+                class Nothing {
+                }
+
+                const factory = createSpy('stringFactorySpy').and.returnValue(false);
+                const context = new Context().provide(Nothing, factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
+                class Nothing {
+                }
+
+                const factory = createSpy('stringFactorySpy').and.returnValue(false);
+
+                const context = new Context({
+                    factory: {
+                        lazyFunctionEvaluation: false,
+                    },
+                }).provide(Nothing, factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
+                class Nothing {
+                }
+
+                const factory = createSpy('stringFactorySpy');
+
+                new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    },
+                }).provide(Nothing, factory);
+
+                expect(factory).not.toHaveBeenCalled();
+            });
+
+            it('validate factory-returned value', () => {
+                class Nothing {
+                }
+
+                expect(() => new Context()
+                    .provide(Nothing, () => new Nothing())).not.toThrow();
+                expect(() => new Context()
+                    .provide(Nothing, () => Promise.resolve(''))).not.toThrow();
+                expect(() => new Context()
+                    .provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                expect(() => new Context()
+                    .provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
+                expect(() => new Context()
+                    .provide(Nothing, () => null)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context()
+                    .provide(Nothing, () => undefined)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
+                class Nothing {
+                }
+
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(Nothing, () => Promise.resolve(''))).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(Nothing, () => null)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('do not validate WHEN configuration.factory.lazyValidation === true', () => {
+                class Nothing {
+                }
+
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(Nothing, () => null)).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(Nothing, () => undefined)).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
+            });
+
+            it('prevent overriding token at the same context level', () => {
+                class Nothing {
+                }
+
+                expect(() => new Context()
+                    .provide(Nothing, () => new Nothing())
+                    .provide(Nothing, () => new Nothing())).toThrowMatching(thrown =>
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
             });
         });
