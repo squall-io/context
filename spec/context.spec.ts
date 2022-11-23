@@ -1,3 +1,5 @@
+// noinspection DuplicatedCode
+
 import {Context} from '@squall.io/context';
 import createSpy = jasmine.createSpy;
 
@@ -7,7 +9,7 @@ describe('Context', () => {
             expect(new Context()
                 .hasOwn('address')).toBeFalse();
             expect(new Context()
-                .provide('address', 'here', 'around', () => 'Earth')
+                .provide('address', ['here', 'around'], () => 'Earth')
                 .hasOwn('address')).toBeFalse();
             expect(new Context(
                 new Context()
@@ -19,7 +21,7 @@ describe('Context', () => {
                 .hasOwn('address')).toBeFalse();
             expect(new Context(
                 new Context()
-                    .provide('address', 'here', 'around', () => 'Earth'))
+                    .provide('address', ['here', 'around'], () => 'Earth'))
                 .hasOwn('address')).toBeFalse();
 
             expect(new Context()
@@ -52,7 +54,7 @@ describe('Context', () => {
                 .provide('address', 'here', () => 'Earth')
                 .hasOwn('address', 'here')).toBeTrue();
             expect(new Context()
-                .provide('address', 'here', 'around', () => 'Earth')
+                .provide('address', ['here', 'around'], () => 'Earth')
                 .hasOwn('address', 'here')).toBeTrue();
         });
     });
@@ -71,7 +73,7 @@ describe('Context', () => {
             expect(new Context(
                 new Context()
                     .provide('HEIST', () => 'La Casa de Papel'))
-                .provide('HOST', 'okay', 'why-not', () => 'La Casa de Papel')
+                .provide('HOST', ['okay', 'why-not'], () => 'La Casa de Papel')
                 .has('HOST')).toBeFalse();
 
             expect(new Context()
@@ -117,7 +119,7 @@ describe('Context', () => {
             expect(new Context(
                 new Context()
                     .provide('HEIST', () => 'La Casa de Papel'))
-                .provide('HOST', 'good-enough', 'why-not', () => 'La Casa de Papel')
+                .provide('HOST', ['good-enough', 'why-not'], () => 'La Casa de Papel')
                 .has('HOST', 'okay')).toBeFalse();
 
             expect(new Context()
@@ -282,7 +284,7 @@ describe('Context', () => {
             });
         });
 
-        describe('(token: string, ...qualifier, factory)', () => {
+        describe('(token: string, qualifiers, factory)', () => {
             it('return a reference to invoked context', () => {
                 const contextOne = new Context();
                 expect(contextOne
@@ -291,18 +293,18 @@ describe('Context', () => {
 
                 const contextTwo = new Context(contextOne);
                 expect(contextTwo
-                    .provide('target', 'primary', 'secondary', () => '')
+                    .provide('target', ['primary', 'secondary'], () => '')
                 ).toBe(contextTwo);
 
                 const contextThree = new Context(contextOne, contextTwo);
                 expect(contextThree
-                    .provide('target', 'primary', 'write-replica', () => '')
+                    .provide('target', ['primary', 'write-replica'], () => '')
                 ).toBe(contextThree);
             });
 
             it('register token with qualifiers', () => {
                 const context = new Context()
-                    .provide('target', 'primary', 'write-candidate', () => '');
+                    .provide('target', ['primary', 'write-candidate'], () => '');
                 expect(context.hasOwn('target', 'primary')).toBeTrue();
                 expect(context.hasOwn('target', 'write-candidate')).toBeTrue();
             });
@@ -330,7 +332,7 @@ describe('Context', () => {
                     factory: {
                         lazyFunctionEvaluation: false,
                     },
-                }).provide('target', 'primary', 'write-candidate', factory);
+                }).provide('target', ['primary', 'write-candidate'], factory);
 
                 expect(factory).toHaveBeenCalledOnceWith(context);
             });
@@ -410,15 +412,16 @@ describe('Context', () => {
                     .provide('address', 'primary', () => 'Earth')).toThrowMatching(thrown =>
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
                 expect(() => new Context()
-                    .provide('address', 'primary', 'write-candidate', () => 'Earth')
+                    .provide('address', ['primary', 'write-candidate'], () => 'Earth')
                     .provide('address', 'primary', () => 'Earth')).toThrowMatching(thrown =>
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
             });
         });
 
-        describe('(token: Class, ...qualifiers?, factory)', () => {
+        describe('(token: Class, factory)', () => {
             it('return a reference to invoked context', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const contextOne = new Context();
@@ -433,6 +436,7 @@ describe('Context', () => {
 
             it('register token', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(new Context()
@@ -445,6 +449,7 @@ describe('Context', () => {
                 const context = new Context(...parents);
 
                 class Nothing {
+                    brand?: string;
                 }
 
                 context.provide(Nothing, () => new Nothing());
@@ -455,6 +460,7 @@ describe('Context', () => {
 
             it('invoke factory function', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
@@ -465,6 +471,7 @@ describe('Context', () => {
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
@@ -480,6 +487,7 @@ describe('Context', () => {
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy');
@@ -495,26 +503,30 @@ describe('Context', () => {
 
             it('validate factory-returned value', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context()
                     .provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(''))).not.toThrow();
+                    .provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                    .provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
-                expect(() => new Context()
-                    .provide(Nothing, () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
-                expect(() => new Context()
-                    .provide(Nothing, () => undefined)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    .provide(Nothing, () => new Nothing())).not.toThrow();
+                // expect(() => new Context()
+                //     .provide(Nothing, () => null)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
+                // expect(() => new Context()
+                //     .provide(Nothing, () => undefined)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => undefined' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context({
@@ -526,53 +538,58 @@ describe('Context', () => {
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(''))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: false,
-                    },
-                }).provide(Nothing, () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: false,
+                //     },
+                // }).provide(Nothing, () => null)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
             });
 
             it('do not validate WHEN configuration.factory.lazyValidation === true', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: true,
+                //     }
+                // }).provide(Nothing, () => null)).not.toThrow();
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: true,
+                //     }
+                // }).provide(Nothing, () => undefined)).not.toThrow();
+                // TS2345: Argument of type '() => undefined' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
                     }
-                }).provide(Nothing, () => null)).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
                     }
-                }).provide(Nothing, () => undefined)).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: true,
-                    }
-                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: true,
-                    }
-                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
             });
 
             it('prevent overriding token at the same context level', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context()
@@ -582,9 +599,10 @@ describe('Context', () => {
             });
         });
 
-        describe('(token: Class, ...qualifiers?, value)', () => {
+        describe('(token: Class, value)', () => {
             it('return a reference to invoked context', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const contextOne = new Context();
@@ -599,6 +617,7 @@ describe('Context', () => {
 
             it('register token', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(new Context()
@@ -611,6 +630,7 @@ describe('Context', () => {
                 const context = new Context(...parents);
 
                 class Nothing {
+                    brand?: string;
                 }
 
                 context.provide(Nothing, new Nothing());
@@ -619,9 +639,9 @@ describe('Context', () => {
                 expect(parents.every(parent => !parent.hasOwn(Nothing))).toBeTrue();
             });
 
-            // noinspection DuplicatedCode
             it('invoke factory function', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
@@ -632,6 +652,7 @@ describe('Context', () => {
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
@@ -647,6 +668,7 @@ describe('Context', () => {
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 const factory = createSpy('stringFactorySpy');
@@ -662,27 +684,32 @@ describe('Context', () => {
 
             it('validate factory-returned value', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context()
                     .provide(Nothing, new Nothing())).not.toThrow();
-                // noinspection DuplicatedCode
                 expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(''))).not.toThrow();
-                expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(null))).not.toThrow();
-                expect(() => new Context()
-                    .provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
-                expect(() => new Context()
-                    .provide(Nothing, () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
-                expect(() => new Context()
-                    .provide(Nothing, () => undefined)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    .provide(Nothing, new Nothing())).not.toThrow();
+                // expect(() => new Context()
+                //     .provide(Nothing, null)).not.toThrow();
+                // TS2345: Argument of type 'null' is not assignable to parameter of type 'Nothing | Factory '.
+                // expect(() => new Context()
+                //     .provide(Nothing, undefined)).not.toThrow();
+                // TS2345: Argument of type 'undefined' is not assignable to parameter of type 'Nothing | Factory '.
+                // expect(() => new Context()
+                //     .provide(Nothing, () => null)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
+                // expect(() => new Context()
+                //     .provide(Nothing, () => undefined)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => undefined' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context({
@@ -690,59 +717,62 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide(Nothing, new Nothing())).not.toThrow();
-                // noinspection DuplicatedCode
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(''))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
-                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: false,
-                    },
-                }).provide(Nothing, () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: false,
+                //     },
+                // }).provide(Nothing, () => null)).toThrowMatching(
+                //     thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
             });
 
-            // noinspection DuplicatedCode
             it('do not validate WHEN configuration.factory.lazyValidation === true', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: true,
+                //     }
+                // }).provide(Nothing, () => null)).not.toThrow();
+                // TS2345: Argument of type '() => null' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
+                // expect(() => new Context({
+                //     factory: {
+                //         lazyValidation: true,
+                //     }
+                // }).provide(Nothing, () => undefined)).not.toThrow();
+                // TS2345: Argument of type '() => undefined' is not assignable to parameter of type 'Nothing | Factory<Nothing>'.
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
                     }
-                }).provide(Nothing, () => null)).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
                     }
-                }).provide(Nothing, () => undefined)).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: true,
-                    }
-                }).provide(Nothing, () => Promise.resolve(null))).not.toThrow();
-                expect(() => new Context({
-                    factory: {
-                        lazyValidation: true,
-                    }
-                }).provide(Nothing, () => Promise.resolve(undefined))).not.toThrow();
+                }).provide(Nothing, () => new Nothing())).not.toThrow();
             });
 
             it('prevent overriding token at the same context level', () => {
                 class Nothing {
+                    brand?: string;
                 }
 
                 expect(() => new Context()
