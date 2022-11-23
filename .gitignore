@@ -5,4 +5,5 @@
 *.error
 
 /node_modules
+/.coverage
 /dist
