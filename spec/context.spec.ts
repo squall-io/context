@@ -972,6 +972,53 @@ describe('Context', () => {
             });
         });
     });
+
+    describe('inject', () => {
+        describe('(token: string)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: string, qualifier: string)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: string, injectOptions)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Class)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Class, qualifier: string)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Class, injectOptions)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Context.Token)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Context.Token, qualifier: string)', () => {
+            it('noop', () => {
+            });
+        });
+
+        describe('(token: Context.Token, injectOptions)', () => {
+            it('noop', () => {
+            });
+        });
+    });
     describe('orphan', () => {
         it('inject string token', () => {
             const context = new Context();
