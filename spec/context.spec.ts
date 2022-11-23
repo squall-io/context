@@ -834,6 +834,143 @@ describe('Context', () => {
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
             });
         });
+
+        describe('(token: Context.Token, value)', () => {
+            class Nothing {
+                brand?: string;
+            }
+
+            const NOTHING_TOKEN: Context.Token<Nothing> = Symbol('Nothing Token');
+
+            it('return a reference to invoked context', () => {
+                const contextOne = new Context();
+                expect(contextOne.provide(NOTHING_TOKEN, new Nothing())).toBe(contextOne);
+
+                const contextTwo = new Context(contextOne);
+                expect(contextTwo.provide(NOTHING_TOKEN, new Nothing())).toBe(contextTwo);
+
+                const contextThree = new Context(contextOne, contextTwo);
+                expect(contextThree.provide(NOTHING_TOKEN, new Nothing())).toBe(contextThree);
+            });
+
+            it('register token', () => {
+                expect(new Context()
+                    .provide(NOTHING_TOKEN, new Nothing())
+                    .hasOwn(NOTHING_TOKEN,)).toBeTrue();
+            });
+
+            it('register token at invoked context', () => {
+                const parents = [new Context(), new Context()];
+                const context = new Context(...parents);
+
+                context.provide(NOTHING_TOKEN, new Nothing());
+
+                expect(context.hasOwn(NOTHING_TOKEN,)).toBeTrue();
+                expect(parents.every(parent => !parent.hasOwn(NOTHING_TOKEN,))).toBeTrue();
+            });
+
+            it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
+                const factory = createSpy('stringFactorySpy').and.returnValue(false);
+
+                const context = new Context({
+                    factory: {
+                        lazyFunctionEvaluation: false,
+                    },
+                }).provide(NOTHING_TOKEN, factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
+                const factory = createSpy('stringFactorySpy');
+
+                new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    },
+                }).provide(NOTHING_TOKEN, factory);
+
+                expect(factory).not.toHaveBeenCalled();
+            });
+
+            it('validate value', () => {
+                expect(() => new Context()
+                    .provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context()
+                    .provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context()
+                    .provide(NOTHING_TOKEN, null as any as Nothing)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context()
+                    .provide(NOTHING_TOKEN, undefined as any as Nothing)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('validate value WHEN configuration.factory.lazyValidation === false', () => {
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, () => new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, null as any as Nothing)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: false,
+                    },
+                }).provide(NOTHING_TOKEN, undefined as any as Nothing)).toThrowMatching(
+                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('do not validate value WHEN configuration.factory.lazyValidation === true', () => {
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(NOTHING_TOKEN, null as any as Nothing)).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(NOTHING_TOKEN, undefined as any as Nothing)).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                }).provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
+            });
+
+            it('prevent overriding token at the same context level', () => {
+                expect(() => new Context()
+                    .provide(NOTHING_TOKEN, new Nothing())
+                    .provide(NOTHING_TOKEN, new Nothing())).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+            });
+        });
     });
     describe('orphan', () => {
         it('inject string token', () => {
