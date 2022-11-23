@@ -975,7 +975,164 @@ describe('Context', () => {
 
     describe('inject', () => {
         describe('(token: string)', () => {
-            it('noop', () => {
+            it('return provided value', () => {
+                const expected = Math.random().toString(36);
+                expect(new Context()
+                    .provide('address', () => expected)
+                    .inject('address')
+                ).toBe(expected);
+            });
+
+            it('return default qualified value', () => {
+                const expected = Math.random().toString(36);
+                expect(new Context()
+                    .provide('address', () => expected)
+                    .provide('address', 'home', () => Math.random().toString(36))
+                    .inject('address')
+                ).toBe(expected);
+                expect(new Context()
+                    .provide('address', 'home', () => expected)
+                    .inject('address')
+                ).toBe(expected);
+            });
+
+            it('return default qualified value from ancestor WHEN not possible at descendant level', () => {
+                const expected = Math.random().toString(36);
+                expect(new Context(
+                    new Context()
+                        .provide('address', () => expected))
+                    .inject('address')
+                ).toBe(expected);
+            });
+
+            it('return cached factory-evaluated value', () => {
+                const expected = Math.random().toString(36);
+                const factory = createSpy('stringFactorySpy')
+                    .and.returnValues(expected, Math.random().toString(36));
+                const context = new Context().provide('address', factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject('address')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject('address')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+
+                const otherExpected = Math.random().toString(36);
+                const otherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(otherExpected, Math.random().toString(36));
+                const otherContext = new Context().provide('address', otherFactory);
+
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject('address')).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject('address')).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+
+                const anotherExpected = Math.random().toString(36);
+                const anotherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(anotherExpected, Math.random().toString(36));
+                const anotherContext = new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                }).provide('address', anotherFactory);
+
+                expect(anotherFactory).not.toHaveBeenCalled();
+                expect(anotherContext
+                    .inject('address')).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherContext.inject('address')).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+            });
+
+            it('evaluate factory with invocation context', () => {
+                const expected = Math.random().toString(36);
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const context = new Context(new Context()
+                    .provide('address', factory));
+
+                context.inject('address');
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('caches factory-evaluated value at bean definition context', () => {
+                const expected = Math.random().toString(36);
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const parent = new Context().provide('address', factory);
+                const context = new Context(parent);
+
+                expect(context.inject('address')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(parent.inject('address')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('fail WHEN factory-evaluated value is empty', () => {
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide('address', () => null)
+                    .inject('address')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide('address', () => null)
+                    .inject('address')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide('address', () => undefined)
+                    .inject('address')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide('address', () => undefined)
+                    .inject('address')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('fail WHEN factory-evaluated promise value is empty', async () => {
+                await expectAsync(new Context()
+                    .provide('address', () => Promise.resolve(null))
+                    .inject('address')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                await expectAsync(new Context()
+                    .provide('address', () => Promise.resolve(undefined))
+                    .inject('address')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+
+                const expected = Math.random().toString(36);
+                await expectAsync(new Context()
+                    .provide('address', () => Promise.resolve(expected))
+                    .inject('address')
+                ).toBeResolved(expected);
+            });
+
+            it('fail WHEN there is undecidable bean at any level of contexts', () => {
+                const expected = Math.random().toString(36);
+                expect(() => new Context(
+                    new Context()
+                        .provide('address', () => expected))
+                    .provide('address', 'home', () => Math.random().toString(36))
+                    .provide('address', 'work', () => Math.random().toString(36))
+                    .inject('address')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_UNDECIDABLE_BEAN));
+            });
+
+            it('fail WHEN no bean definition the tree has been provided', () => {
+                expect(() => new Context().inject('home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
             });
         });
 
