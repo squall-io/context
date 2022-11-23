@@ -28,11 +28,17 @@ export class Context {
         }
     }
 
-    provide<T extends Context.Token<any>>(...provider: [
-        token: T, ...qualifiers: string[], valueOrFactory: Context.ValueOrFactory<T>]): this {
-        const valueOrFactory = provider.pop() as Context.ValueOrFactory<T>;
-        const qualifiers = provider as (string | symbol)[] ?? [];
-        const token = provider.shift() as T;
+    provide<T extends Context.Token<any>>(
+        token: T, valueOrFactory: Context.ValueOrFactory<T>): this;
+    provide<T extends Context.Token<any>>(
+        token: T, qualifiers: string | string[],
+        valueOrFactory: Context.ValueOrFactory<T>): this;
+    provide<T extends Context.Token<any>>(
+        token: T, theQualifiers: string | string[] | Context.ValueOrFactory<T>,
+        valueOrFactory?: Context.ValueOrFactory<T>): this {
+        const qualifiers: (string | symbol)[] = 2 === arguments.length
+            ? [] : Array.isArray(theQualifiers) ? theQualifiers : [theQualifiers];
+        valueOrFactory = 2 === arguments.length ? theQualifiers as Context.ValueOrFactory<T> : valueOrFactory;
 
         if (0 === qualifiers.length) {
             qualifiers.push(Context.#DEFAULT_QUALIFIER);
@@ -92,7 +98,8 @@ export class Context {
     inject<T extends Context.Token<any>>(token: T): Context.Value<T>; // TODO: Document undecidable bean error
     inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, injectOptions?: Context.InjectOptions): Context.Value<T>;
-    inject<T extends Context.Token<any>>(token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
+    inject<T extends Context.Token<any>>(token: T,
+                                         qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
         const qualifier = ('string' === typeof qualifierOrInjectOptions
             ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
         const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
