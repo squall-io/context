@@ -23,7 +23,7 @@
     "declare": "tsc --emitDeclarationOnly",
     "lint": "tsc --noEmit",
     "test:dev": "nodemon --ext js,ts,json,lock --watch . --ignore node_modules --ignore .git --exec 'yarpm test'",
-    "test": "yarpm run lint && coverage --statements 100 --functions 100 --branches 100 --lines 100 --report-dir .coverage --include src jasmine && coverage check-coverage",
+    "test": "yarpm run lint && coverage --statements 100 --functions 100 --branches 100 --lines 100 --report-dir .coverage --include src jasmine",
     "coverage": "coverage",
     "jasmine": "jasmine",
     "nodemon": "nodemon",
