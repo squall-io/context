@@ -7,7 +7,7 @@ export class Context {
 
     readonly #dependencies = new Context.FlexibleMap<Context.Token<any>, Context.FlexibleMap<string | symbol, any>>();
     readonly #factories = new Context.FlexibleMap<Context.Token<any>,
-        Context.FlexibleMap<string | symbol, { (context: Context): unknown }>>();
+        Context.FlexibleMap<string | symbol, Context.Factory<unknown>>>();
     readonly #configuration: Context.Configuration = {
         factory: {
             lazyFunctionEvaluation: false,
@@ -161,9 +161,10 @@ export class Context {
         return this.#has(token, qualifier ?? Context.#DEFAULT_QUALIFIER);
     }
 
-    #resolveFactory(token: Context.Token<any>, qualifier: string | symbol,
+    #resolveFactory(token: Context.Token<any>,
+                    qualifier: string | symbol,
                     undecided = new Set<string | symbol>()
-    ): [factory: { (context: Context): unknown } | undefined, context: Context] | void {
+    ): [factory: Context.Factory<unknown> | undefined, context: Context] | void {
         const factories = this.#factories.get(token);
 
         if (factories) {
@@ -323,15 +324,18 @@ export class Context {
 }
 
 export namespace Context {
-    export type ValueOrFactory<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | { (context: Context): I }
-        : T extends Constructor<infer I> ? I | { (context: Context): I }
-            : { (context: Context): unknown }; // NOTE: (unknown | whatever) results in unknown
+    export type ValueOrFactory<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | Factory<I>
+        : T extends Constructor<infer I> ? I | Factory<I>
+            : T extends string ? Factory<unknown>
+                : never; // NOTE: (unknown | whatever) results in unknown
     export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
         : T extends Constructor<infer I> ? I
-            : unknown;
+            : T extends string ? unknown
+                : never;
     export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
     export type Constructor<T> = { new(...parameters: any[]): T };
     export type TokenSymbol<T> = symbol & Record<never, T>;
+    export type Factory<T> = { (context: Context): T };
     export type DeepPartial<T> = T extends (null | undefined | boolean | number | string) ? T : {
         [K in keyof T]?: DeepPartial<T[K]>;
     };
