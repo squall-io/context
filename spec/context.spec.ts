@@ -1343,7 +1343,6 @@ describe('Context', () => {
                     .inject('address', {qualifier: 'home'})).toThrowMatching(thrown =>
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
 
-
                 await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', () => Promise.resolve(null))
                     .inject('address', {})
@@ -1437,7 +1436,6 @@ describe('Context', () => {
                 expect(factory).toHaveBeenCalledTimes(4);
                 await expectAsync(context.inject('counter', {})).toBeResolvedTo(0);
                 expect(factory).toHaveBeenCalledTimes(4);
-
 
                 factory = createSpy('stringFactorySpy').and.returnValues(0, 1, 2);
                 context = new Context().provide('counter', '1-step', factory);
@@ -1960,7 +1958,6 @@ describe('Context', () => {
                 await expectAsync(context.inject(Building, {})).toBeResolvedTo(ZERO);
                 expect(factory).toHaveBeenCalledTimes(4);
 
-
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 context = new Context().provide(Building, '1-step', factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
@@ -2475,7 +2472,6 @@ describe('Context', () => {
                     .inject(BUILDING, {qualifier: 'home'})).toThrowMatching(thrown =>
                     thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
 
-
                 await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING_PROMISE, () => Promise.resolve(null as any as Building))
                     .inject(BUILDING_PROMISE, {})
@@ -2570,7 +2566,6 @@ describe('Context', () => {
                 expect(factory).toHaveBeenCalledTimes(4);
                 await expectAsync(context.inject(BUILDING_PROMISE, {})).toBeResolvedTo(ZERO);
                 expect(factory).toHaveBeenCalledTimes(4);
-
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 context = new Context().provide(BUILDING, '1-step', factory);
