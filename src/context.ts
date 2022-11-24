@@ -115,12 +115,12 @@ export class Context {
             //       Should we allow caching the result, maybe by context on which is was called?
             const factoryWithContext = this.#resolveFactory(token, qualifier, undecided);
 
-            [value] = Context.#validValue([
-                factoryWithContext?.[0]?.(this),
-                factoryWithContext?.[1]!
-            ], token, qualifier) ?? [undefined, undefined];
-
-            if (Context.#isEmpty(value)) {
+            if (factoryWithContext?.[0]) {
+                [value] = Context.#validValue([
+                    factoryWithContext?.[0]?.(this),
+                    factoryWithContext?.[1]!
+                ], token, qualifier) ?? [undefined, undefined];
+            } else {
                 [value] = this.#resolveValue(token, qualifier, undecided) ?? [undefined, undefined];
             }
         } else {

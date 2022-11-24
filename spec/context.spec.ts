@@ -2655,21 +2655,14 @@ describe('Context', () => {
             });
         });
     });
-    describe('orphan', () => {
-        it('inject string token', () => {
-            const context = new Context();
-            const expected = Math.random().toString(36);
-            const factorySpy = createSpy('factorySpy', _ => expected).and.callThrough();
 
-            expect(context.provide('primary', 'a', factorySpy)).toBe(context);
-            expect(factorySpy).withContext('Factory evaluated eagerly.').toHaveBeenCalledOnceWith(context);
-            expect(context.inject('primary', 'a')).toBe(expected);
-            expect(factorySpy).withContext('Factory never evaluated.').toHaveBeenCalledOnceWith(context);
-            expect(context.inject('primary', 'a')).toBe(expected);
-            expect(factorySpy).withContext('Factory never eagerly.').toHaveBeenCalledOnceWith(context);
-            expect(() => context.inject('a')).toThrowMatching((thrown: unknown) =>
-                thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
-            expect(factorySpy).withContext('Factory never eagerly.').toHaveBeenCalledOnceWith(context);
+    describe('bug fix', () => {
+        it('do not resolve value WHEN injecting with forceEvaluation === true and it was provided with a factory', () => {
+            expect(() => new Context()
+                .provide('fibonacci', createSpy('springFactorySpy')
+                    .and.returnValues(0, undefined))
+                .inject('fibonacci', {forceEvaluation: true})
+            ).toThrowError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
         });
     });
 })
