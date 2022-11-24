@@ -1678,7 +1678,6 @@ describe('Context', () => {
 
         describe('(token: Class, qualifier: string)', () => {
             class Building {
-                street?: string;
                 number?: number;
             }
 
@@ -1817,7 +1816,6 @@ describe('Context', () => {
 
         describe('(token: Class, injectOptions)', () => {
             class Building {
-                street?: string;
                 number?: number;
             }
 
@@ -2242,7 +2240,6 @@ describe('Context', () => {
             const BUILDING: Context.Token<Building> = Symbol('BUILDING');
 
             class Building {
-                street?: string;
                 number?: number;
             }
 
@@ -2420,7 +2417,6 @@ describe('Context', () => {
             const BUILDING: Context.Token<Building> = Symbol('BUILDING');
 
             class Building {
-                street?: string;
                 number?: number;
             }
 
