@@ -973,7 +973,7 @@ describe('Context', () => {
         });
     });
 
-    describe('inject', () => {
+    describe('.inject', () => {
         describe('(token: string)', () => {
             it('return provided value', () => {
                 const expected = Math.random().toString(36);
