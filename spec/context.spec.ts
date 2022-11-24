@@ -2007,7 +2007,178 @@ describe('Context', () => {
         });
 
         describe('(token: Context.Token, qualifier: string)', () => {
-            it('noop', () => {
+            const BUILDING: Context.Token<Building> = Symbol('BUILDING');
+            class Building {
+                street?: string;
+                number?: number;
+            }
+
+            it('return provided value', () => {
+                const expected = new Building();
+                expect(new Context()
+                    .provide(BUILDING, () => expected)
+                    .inject(BUILDING)
+                ).toBe(expected);
+            });
+
+            it('return default qualified value', () => {
+                const expected = new Building();
+                expect(new Context()
+                    .provide(BUILDING, () => expected)
+                    .provide(BUILDING, 'home', () => new Building())
+                    .inject(BUILDING)
+                ).toBe(expected);
+                expect(new Context()
+                    .provide(BUILDING, 'home', () => expected)
+                    .inject(BUILDING)
+                ).toBe(expected);
+            });
+
+            it('return default qualified value from ancestor WHEN not possible at descendant level', () => {
+                const expected = new Building();
+                expect(new Context(
+                    new Context()
+                        .provide(BUILDING, 'home', () => expected))
+                    .inject(BUILDING, 'home')
+                ).toBe(expected);
+            });
+
+            it('return cached factory-evaluated value', () => {
+                const expected = new Building();
+                const factory = createSpy('stringFactorySpy')
+                    .and.returnValues(expected, new Building());
+                const context = new Context().provide(BUILDING, 'home', factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject(BUILDING, 'home')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject(BUILDING, 'home')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+
+                const otherExpected = new Building();
+                const otherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(otherExpected, new Building());
+                const otherContext = new Context().provide(BUILDING, 'home', otherFactory);
+
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject(BUILDING, 'home')).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject(BUILDING, 'home')).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+
+                const anotherExpected = new Building();
+                const anotherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(anotherExpected, new Building());
+                const anotherContext = new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                }).provide(BUILDING, 'home', anotherFactory);
+
+                expect(anotherFactory).not.toHaveBeenCalled();
+                expect(anotherContext
+                    .inject(BUILDING, 'home')).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherContext.inject(BUILDING, 'home')).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+            });
+
+            it('evaluate factory with invocation context', () => {
+                const expected = new Building();
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const context = new Context(new Context()
+                    .provide(BUILDING, 'home', factory));
+
+                context.inject(BUILDING, 'home');
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('caches factory-evaluated value at bean definition context', () => {
+                const expected = new Building();
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const parent = new Context().provide(BUILDING, 'home', factory);
+                const context = new Context(parent);
+
+                expect(context.inject(BUILDING, 'home')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(parent.inject(BUILDING, 'home')).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('fail WHEN factory-evaluated value is empty', () => {
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide(BUILDING, 'home', () => null as any as Building)
+                    .inject(BUILDING, 'home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide(BUILDING, 'home', () => null as any as Building)
+                    .inject(BUILDING, 'home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide(BUILDING, 'home', () => undefined as any as Building)
+                    .inject(BUILDING, 'home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide(BUILDING, 'home', () => undefined as any as Building)
+                    .inject(BUILDING, 'home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('fail WHEN promise-resolved value is empty', async () => {
+                const BUILDING_PROMISE: Context.Token<Promise<Building>> = Symbol('BUILDING_PROMISE');
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', Promise.resolve(null as any as Building))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', Promise.resolve(undefined as any as Building))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+
+                const expected = new Building();
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', Promise.resolve(expected))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeResolvedTo(expected);
+            });
+
+            it('fail WHEN factory-evaluated promise value is empty', async () => {
+                const BUILDING_PROMISE: Context.Token<Promise<Building>> = Symbol('BUILDING_PROMISE');
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', () => Promise.resolve(null as any as Building))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', () => Promise.resolve(undefined as any as Building))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+
+                const expected = new Building();
+                await expectAsync(new Context()
+                    .provide(BUILDING_PROMISE, 'home', () => Promise.resolve(expected))
+                    .inject(BUILDING_PROMISE, 'home')
+                ).toBeResolvedTo(expected);
+            });
+
+            it('fail WHEN no bean definition the tree has been provided', () => {
+                expect(() => new Context().inject(BUILDING, 'home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
             });
         });
 
