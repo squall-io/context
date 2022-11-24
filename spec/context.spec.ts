@@ -1288,7 +1288,242 @@ describe('Context', () => {
         });
 
         describe('(token: string, injectOptions)', () => {
-            it('noop', () => {
+            it('resolve bean', async () => {
+                const expected = Math.random().toString(36);
+                expect(new Context()
+                    .provide('address', () => expected)
+                    .inject('address', {})
+                ).toBe(expected);
+                await expectAsync(new Context()
+                    .provide('address', () => Promise.resolve(expected))
+                    .inject('address', {})
+                ).toBeResolvedTo(expected);
+
+                expect(new Context()
+                    .provide('address', 'work', () => expected)
+                    .inject('address', {qualifier: 'work'})
+                ).toBe(expected);
+                await expectAsync(new Context()
+                    .provide('address', 'work', () => Promise.resolve(expected))
+                    .inject('address', {qualifier: 'work'})
+                ).toBeResolvedTo(expected);
+
+                let context = new Context();
+                let factory = createSpy('stringFactorySpy').and.returnValue(expected);
+                expect(context
+                    .provide('address', 'work', factory)
+                    .inject('address', {qualifier: 'work', forceEvaluation: false})
+                ).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                context = new Context();
+                factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(expected));
+                await expectAsync(new Context()
+                    .provide('address', 'work', factory)
+                    .inject('address', {qualifier: 'work', forceEvaluation: false})
+                ).toBeResolvedTo(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('fail WHEN value is empty', async () => {
+                expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', () => null)
+                    .inject('address', {})).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', () => undefined)
+                    .inject('address', {})).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+
+                expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', 'home', () => null)
+                    .inject('address', {qualifier: 'home'})).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', 'home', () => undefined)
+                    .inject('address', {qualifier: 'home'})).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+
+
+                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', () => Promise.resolve(null))
+                    .inject('address', {})
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('address', () => Promise.resolve(undefined))
+                    .inject('address', {})
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+
+                let context = new Context();
+                let factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(null));
+                await expectAsync(context
+                    .provide('address', 'work', factory)
+                    .inject('address', {qualifier: 'work', forceEvaluation: false})
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                context = new Context();
+                factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(Promise.resolve(undefined)));
+                await expectAsync(new Context()
+                    .provide('address', 'work', factory)
+                    .inject('address', {qualifier: 'work', forceEvaluation: false})
+                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('revaluate factory and validate value WHEN injectOptions.forceEvaluation === true, without caching the result', async () => {
+                let factory = createSpy('stringFactorySpy').and.returnValues(0, 1, 2);
+                let context = new Context().provide('counter', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBe(1);
+                expect(factory).toHaveBeenCalledTimes(2);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBe(2);
+                expect(factory).toHaveBeenCalledTimes(3);
+                expect(context.inject('counter', {})).toBe(0);
+                expect(factory).toHaveBeenCalledTimes(3);
+
+                factory = createSpy('stringFactorySpy').and.returnValues(0, null, undefined, 2);
+                context = new Context().provide('counter', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(() => context.inject('counter', {
+                    forceEvaluation: true,
+                })).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(factory).toHaveBeenCalledTimes(2);
+                expect(() => context.inject('counter', {
+                    forceEvaluation: true,
+                })).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(factory).toHaveBeenCalledTimes(3);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBe(2);
+                expect(factory).toHaveBeenCalledTimes(4);
+                expect(context.inject('counter', {})).toBe(0);
+                expect(factory).toHaveBeenCalledTimes(4);
+
+                factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
+                    Promise.resolve(1), Promise.resolve(2));
+                context = new Context().provide('counter', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBeResolvedTo(1);
+                expect(factory).toHaveBeenCalledTimes(2);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBeResolvedTo(2);
+                expect(factory).toHaveBeenCalledTimes(3);
+                await expectAsync(context.inject('counter', {})).toBeResolvedTo(0);
+                expect(factory).toHaveBeenCalledTimes(3);
+
+                factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
+                    Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
+                context = new Context().provide('counter', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledTimes(2);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledTimes(3);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                })).toBeResolvedTo(2);
+                expect(factory).toHaveBeenCalledTimes(4);
+                await expectAsync(context.inject('counter', {})).toBeResolvedTo(0);
+                expect(factory).toHaveBeenCalledTimes(4);
+
+
+                factory = createSpy('stringFactorySpy').and.returnValues(0, 1, 2);
+                context = new Context().provide('counter', '1-step', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toEqual(1);
+                expect(factory).toHaveBeenCalledTimes(2);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toEqual(2);
+                expect(factory).toHaveBeenCalledTimes(3);
+                expect(context.inject('counter', {
+                    qualifier: '1-step',
+                })).toEqual(0);
+                expect(factory).toHaveBeenCalledTimes(3);
+
+                factory = createSpy('stringFactorySpy').and.returnValues(0, null, undefined, 2);
+                context = new Context().provide('counter', '1-step', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(() => context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(factory).toHaveBeenCalledTimes(2);
+                expect(() => context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(factory).toHaveBeenCalledTimes(3);
+                expect(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toEqual(2);
+                expect(factory).toHaveBeenCalledTimes(4);
+                expect(context.inject('counter', {
+                    qualifier: '1-step',
+                })).toEqual(0);
+                expect(factory).toHaveBeenCalledTimes(4);
+
+                factory = createSpy('stringFactorySpy')
+                    .and.returnValues(Promise.resolve(0), Promise.resolve(1), Promise.resolve(2));
+                context = new Context().provide('counter', '1-step', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toBeResolvedTo(1);
+                expect(factory).toHaveBeenCalledTimes(2);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toBeResolvedTo(2);
+                expect(factory).toHaveBeenCalledTimes(3);
+                await expectAsync(context.inject('counter', {
+                    qualifier: '1-step',
+                })).toBeResolvedTo(0);
+                expect(factory).toHaveBeenCalledTimes(3);
+
+                factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
+                    Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
+                context = new Context().provide('counter', '1-step', factory);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledTimes(2);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                expect(factory).toHaveBeenCalledTimes(3);
+                await expectAsync(context.inject('counter', {
+                    forceEvaluation: true,
+                    qualifier: '1-step',
+                })).toBeResolvedTo(2);
+                expect(factory).toHaveBeenCalledTimes(4);
+                await expectAsync(context.inject('counter', {
+                    qualifier: '1-step',
+                })).toBeResolvedTo(0);
+                expect(factory).toHaveBeenCalledTimes(4);
             });
         });
 
