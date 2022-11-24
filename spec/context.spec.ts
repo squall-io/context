@@ -1528,7 +1528,151 @@ describe('Context', () => {
         });
 
         describe('(token: Class)', () => {
-            it('noop', () => {
+            class Nothing {
+                brand?: string;
+            }
+
+            it('return provided value', () => {
+                const expected = new Nothing();
+                expect(new Context()
+                    .provide(Nothing, () => expected)
+                    .inject(Nothing)
+                ).toBe(expected);
+            });
+
+            it('return default qualified value', () => {
+                const expected = new Nothing();
+                expect(new Context()
+                    .provide(Nothing, () => expected)
+                    .provide(Nothing, 'home', () => new Nothing())
+                    .inject(Nothing)
+                ).toBe(expected);
+                expect(new Context()
+                    .provide(Nothing, 'home', () => expected)
+                    .inject(Nothing)
+                ).toBe(expected);
+            });
+
+            it('return default qualified value from ancestor WHEN not possible at descendant level', () => {
+                const expected = new Nothing();
+                expect(new Context(
+                    new Context()
+                        .provide(Nothing, () => expected))
+                    .inject(Nothing)
+                ).toBe(expected);
+            });
+
+            it('return cached factory-evaluated value', () => {
+                const expected = new Nothing();
+                const factory = createSpy('stringFactorySpy')
+                    .and.returnValues(expected, new Nothing());
+                const context = new Context().provide(Nothing, factory);
+
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject(Nothing)).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(context.inject(Nothing)).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+
+                const otherExpected = new Nothing();
+                const otherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(otherExpected, new Nothing());
+                const otherContext = new Context().provide(Nothing, otherFactory);
+
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject(Nothing)).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherContext.inject(Nothing)).toBe(otherExpected);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+
+                const anotherExpected = new Nothing();
+                const anotherFactory = createSpy('stringFactorySpy')
+                    .and.returnValues(anotherExpected, new Nothing());
+                const anotherContext = new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                }).provide(Nothing, anotherFactory);
+
+                expect(anotherFactory).not.toHaveBeenCalled();
+                expect(anotherContext
+                    .inject(Nothing)).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherContext.inject(Nothing)).toBe(anotherExpected);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+            });
+
+            it('evaluate factory with invocation context', () => {
+                const expected = new Nothing();
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const context = new Context(new Context()
+                    .provide(Nothing, factory));
+
+                context.inject(Nothing);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('caches factory-evaluated value at bean definition context', () => {
+                const expected = new Nothing();
+                const factory = createSpy('stringFactorySpy').and.returnValues(expected);
+                const parent = new Context().provide(Nothing, factory);
+                const context = new Context(parent);
+
+                expect(context.inject(Nothing)).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(parent.inject(Nothing)).toBe(expected);
+                expect(factory).toHaveBeenCalledOnceWith(context);
+            });
+
+            it('fail WHEN factory-evaluated value is empty', () => {
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide(Nothing, () => null as any as Nothing)
+                    .inject(Nothing)).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide(Nothing, () => null as any as Nothing)
+                    .inject(Nothing)).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyValidation: true,
+                    }
+                })
+                    .provide(Nothing, () => undefined as any as Nothing)
+                    .inject(Nothing)).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                expect(() => new Context({
+                    factory: {
+                        lazyFunctionEvaluation: true,
+                    }
+                })
+                    .provide(Nothing, () => undefined as any as Nothing)
+                    .inject(Nothing)).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+            });
+
+            it('fail WHEN there is undecidable bean at any level of contexts', () => {
+                const expected = new Nothing();
+                expect(() => new Context(
+                    new Context()
+                        .provide(Nothing, () => expected))
+                    .provide(Nothing, 'home', () => new Nothing())
+                    .provide(Nothing, 'work', () => new Nothing())
+                    .inject(Nothing)).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_UNDECIDABLE_BEAN));
+            });
+
+            it('fail WHEN no bean definition the tree has been provided', () => {
+                expect(() => new Context().inject('home')).toThrowMatching(thrown =>
+                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
             });
         });
 
