@@ -86,7 +86,7 @@ export class Context {
             }
         }
 
-        if (value) {
+        if (!Context.#isEmpty(value)) {
             for (const qualifier of qualifiers) {
                 this.#dependencies
                     .computeIfNotExists(token, () => new Context.FlexibleMap())
