@@ -1116,7 +1116,7 @@ describe('Context', () => {
                 await expectAsync(new Context()
                     .provide('address', () => Promise.resolve(expected))
                     .inject('address')
-                ).toBeResolved(expected);
+                ).toBeResolvedTo(expected);
             });
 
             it('fail WHEN there is undecidable bean at any level of contexts', () => {
@@ -1278,7 +1278,7 @@ describe('Context', () => {
                 await expectAsync(new Context()
                     .provide('address', 'home', () => Promise.resolve(expected))
                     .inject('address', 'home')
-                ).toBeResolved(expected);
+                ).toBeResolvedTo(expected);
             });
 
             it('fail WHEN no bean definition the tree has been provided', () => {
@@ -1316,7 +1316,7 @@ describe('Context', () => {
                 ).toBe(expected);
                 expect(factory).toHaveBeenCalledOnceWith(context);
                 context = new Context();
-                factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(expected));
+                factory = createSpy('stringFactorySpy').and.resolveTo(expected);
                 await expectAsync(new Context()
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
@@ -1354,14 +1354,14 @@ describe('Context', () => {
                 ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
 
                 let context = new Context();
-                let factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(null));
+                let factory = createSpy('stringFactorySpy').and.resolveTo(null);
                 await expectAsync(context
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
                 ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
                 expect(factory).toHaveBeenCalledOnceWith(context);
                 context = new Context();
-                factory = createSpy('stringFactorySpy').and.returnValue(Promise.resolve(Promise.resolve(undefined)));
+                factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
                 await expectAsync(new Context()
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
