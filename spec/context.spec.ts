@@ -1443,16 +1443,16 @@ describe('Context', () => {
                 expect(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(1);
+                })).toBe(1);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(2);
+                })).toBe(2);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject('counter', {
                     qualifier: '1-step',
-                })).toEqual(0);
+                })).toBe(0);
                 expect(factory).toHaveBeenCalledTimes(3);
 
                 factory = createSpy('stringFactorySpy').and.returnValues(0, null, undefined, 2);
@@ -1473,11 +1473,11 @@ describe('Context', () => {
                 expect(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(2);
+                })).toBe(2);
                 expect(factory).toHaveBeenCalledTimes(4);
                 expect(context.inject('counter', {
                     qualifier: '1-step',
-                })).toEqual(0);
+                })).toBe(0);
                 expect(factory).toHaveBeenCalledTimes(4);
 
                 factory = createSpy('stringFactorySpy')
@@ -1964,16 +1964,16 @@ describe('Context', () => {
                 expect(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(ONE);
+                })).toBe(ONE);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(TWO);
+                })).toBe(TWO);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(Building, {
                     qualifier: '1-step',
-                })).toEqual(ZERO);
+                })).toBe(ZERO);
                 expect(factory).toHaveBeenCalledTimes(3);
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
@@ -1994,11 +1994,11 @@ describe('Context', () => {
                 expect(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(TWO);
+                })).toBe(TWO);
                 expect(factory).toHaveBeenCalledTimes(4);
                 expect(context.inject(Building, {
                     qualifier: '1-step',
-                })).toEqual(ZERO);
+                })).toBe(ZERO);
                 expect(factory).toHaveBeenCalledTimes(4);
 
                 factory = createSpy('stringFactorySpy')
@@ -2573,16 +2573,16 @@ describe('Context', () => {
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(ONE);
+                })).toBe(ONE);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(TWO);
+                })).toBe(TWO);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(BUILDING, {
                     qualifier: '1-step',
-                })).toEqual(ZERO);
+                })).toBe(ZERO);
                 expect(factory).toHaveBeenCalledTimes(3);
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
@@ -2603,11 +2603,11 @@ describe('Context', () => {
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toEqual(TWO);
+                })).toBe(TWO);
                 expect(factory).toHaveBeenCalledTimes(4);
                 expect(context.inject(BUILDING, {
                     qualifier: '1-step',
-                })).toEqual(ZERO);
+                })).toBe(ZERO);
                 expect(factory).toHaveBeenCalledTimes(4);
 
                 factory = createSpy('stringFactorySpy')
