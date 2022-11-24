@@ -67,6 +67,8 @@ export class Context {
                 if (Context.#isEmpty(value)) {
                     Context.#validValueAtProvidingSite(qualifiers, value, token);
                 }
+
+                return value;
             });
         }
 
