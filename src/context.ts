@@ -37,12 +37,15 @@ export class Context {
         token: T, theQualifiers: string | string[] | Context.ValueOrFactory<T>,
         valueOrFactory?: Context.ValueOrFactory<T>): this {
         const qualifiers: (string | symbol)[] = 2 === arguments.length
-            ? [] : Array.isArray(theQualifiers) ? theQualifiers : [theQualifiers];
-        valueOrFactory = 2 === arguments.length ? theQualifiers as Context.ValueOrFactory<T> : valueOrFactory;
-
-        if (0 === qualifiers.length) {
-            qualifiers.push(Context.#DEFAULT_QUALIFIER);
-        }
+            ? [Context.#DEFAULT_QUALIFIER]
+            : Array.isArray(theQualifiers)
+                ? 0 === theQualifiers.length
+                    ? [Context.#DEFAULT_QUALIFIER]
+                    : theQualifiers
+                : [theQualifiers];
+        valueOrFactory = 2 === arguments.length
+            ? theQualifiers as Context.ValueOrFactory<T>
+            : valueOrFactory;
 
         for (const qualifier of qualifiers) {
             if (this.#hasOwn(token, qualifier)) {
@@ -63,16 +66,12 @@ export class Context {
         }
 
         if (Context.#isThenable(value)) {
-            value = value.then(value => {
-                if (Context.#isEmpty(value)) {
-                    Context.#validValueAtProvidingSite(qualifiers, value, token);
-                }
-
-                return value;
-            });
+            value = value.then(value => Context.#isEmpty(value)
+                ? Context.#validValueAtProvidingSite(qualifiers, value, token)
+                : value);
         }
 
-        if ((factory ? !this.#configuration.factory.lazyFunctionEvaluation : true) &&
+        if ((Context.#isFactory(factory) ? !this.#configuration.factory.lazyFunctionEvaluation : true) &&
             !this.#configuration.factory.lazyValidation &&
             Context.#isEmpty(value)) {
             Context.#validValueAtProvidingSite(qualifiers, value, token);
@@ -137,7 +136,7 @@ export class Context {
                 if (!Context.#isEmpty(value)) {
                     context!.#dependencies
                         .computeIfNotExists(token, () => new Context.FlexibleMap())
-                        ?.set(qualifier, value)
+                        ?.set(qualifier, value);
                 }
             }
         }
@@ -325,6 +324,10 @@ export class Context {
             : 'function' === typeof token
                 ? `class ${token.name}`
                 : token || `JavaScript::${token}`;
+    }
+
+    static #isFactory(value: any): value is { (context: Context): unknown } {
+        return 'function' === typeof value;
     }
 
     static #isEmpty(value: any): value is null | undefined {
