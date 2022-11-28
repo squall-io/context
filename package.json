@@ -14,12 +14,12 @@
     "url": "https://github.com/squall-io/context.git"
   },
   "scripts": {
-    "build-commonjs": "yarpm run build --out-dir dist/commonjs --plugins '@babel/plugin-transform-modules-commonjs' src",
-    "build-systemjs": "yarpm run build --out-dir dist/systemjs --plugins '@babel/plugin-transform-modules-systemjs' src",
-    "build-amd": "yarpm run build --out-dir dist/amd --plugins '@babel/plugin-transform-modules-amd' src",
-    "build-umd": "yarpm run build --out-dir dist/umd --plugins '@babel/plugin-transform-modules-umd' src",
-    "build-es5": "yarpm run build --out-dir dist/es5 src",
-    "build": "babel --minified --source-maps --delete-dir-on-start --extensions '.ts'",
+    "build-commonjs": "yarpm run build-prefix --out-dir dist/commonjs --plugins '@babel/plugin-transform-modules-commonjs' src",
+    "build-systemjs": "yarpm run build-prefix --out-dir dist/systemjs --plugins '@babel/plugin-transform-modules-systemjs' src",
+    "build-amd": "yarpm run build-prefix --out-dir dist/amd --plugins '@babel/plugin-transform-modules-amd' src",
+    "build-umd": "yarpm run build-prefix --out-dir dist/umd --plugins '@babel/plugin-transform-modules-umd' src",
+    "build-es5": "yarpm run build-prefix --out-dir dist/es5 src",
+    "build-prefix": "babel --minified --source-maps --delete-dir-on-start --extensions '.ts'",
     "declare": "tsc --emitDeclarationOnly",
     "lint": "tsc --noEmit",
     "test:dev": "nodemon --ext js,ts,json,lock --watch . --ignore node_modules --ignore .git --exec 'yarpm test'",
