@@ -14,11 +14,11 @@
     "url": "https://github.com/squall-io/context.git"
   },
   "scripts": {
-    "build-commonjs": "yarpm run build-prefix --out-dir dist/commonjs --plugins '@babel/plugin-transform-modules-commonjs' src",
-    "build-systemjs": "yarpm run build-prefix --out-dir dist/systemjs --plugins '@babel/plugin-transform-modules-systemjs' src",
-    "build-amd": "yarpm run build-prefix --out-dir dist/amd --plugins '@babel/plugin-transform-modules-amd' src",
-    "build-umd": "yarpm run build-prefix --out-dir dist/umd --plugins '@babel/plugin-transform-modules-umd' src",
-    "build-es5": "yarpm run build-prefix --out-dir dist/es5 src",
+    "build-commonjs": "yarpm run build-prefix --out-dir dist/commonjs --plugins '@babel/plugin-transform-modules-commonjs' src && yarpm run declare-commonjs",
+    "build-systemjs": "yarpm run build-prefix --out-dir dist/systemjs --plugins '@babel/plugin-transform-modules-systemjs' src && yarpm run declare-systemjs",
+    "build-amd": "yarpm run build-prefix --out-dir dist/amd --plugins '@babel/plugin-transform-modules-amd' src && yarpm run declare-amd",
+    "build-umd": "yarpm run build-prefix --out-dir dist/umd --plugins '@babel/plugin-transform-modules-umd' src && yarpm run declare-umd",
+    "build-es5": "yarpm run build-prefix --out-dir dist/es5 src && yarpm run declare-es5",
     "build-prefix": "babel --minified --source-maps --delete-dir-on-start --extensions '.ts'",
     "declare-commonjs": "yarpm run declare-prefix --outDir dist/commonjs",
     "declare-systemjs": "yarpm run declare-prefix --outDir dist/systemjs",
