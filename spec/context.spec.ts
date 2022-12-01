@@ -218,10 +218,10 @@ describe('Context', () => {
                     .provide('address', () => Promise.resolve(undefined))).not.toThrow();
                 expect(() => new Context()
                     .provide('address', () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide('address', () => undefined)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
@@ -250,7 +250,7 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide('address', () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate factory-returned value WHEN configuration.factory.lazyValidation === true', () => {
@@ -279,8 +279,9 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide('address', () => 'Earth')
-                    .provide('address', () => 'Earth')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide('address', () => 'Earth')
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
 
@@ -348,10 +349,10 @@ describe('Context', () => {
                     .provide('address', 'primary', () => Promise.resolve(undefined))).not.toThrow();
                 expect(() => new Context()
                     .provide('address', 'primary', () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide('address', 'primary', () => undefined)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
@@ -380,7 +381,7 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide('address', 'primary', () => null)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate factory-returned value WHEN configuration.factory.lazyValidation === true', () => {
@@ -409,12 +410,14 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide('address', 'primary', () => 'Earth')
-                    .provide('address', 'primary', () => 'Earth')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide('address', 'primary', () => 'Earth')
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
                 expect(() => new Context()
                     .provide('address', ['primary', 'write-candidate'], () => 'Earth')
-                    .provide('address', 'primary', () => 'Earth')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide('address', 'primary', () => 'Earth')
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
 
@@ -492,10 +495,10 @@ describe('Context', () => {
                     .provide(Nothing, () => new Nothing())).not.toThrow();
                 expect(() => new Context()
                     .provide(Nothing, () => null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide(Nothing, () => undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
@@ -524,7 +527,7 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide(Nothing, () => null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate factory-returned value WHEN configuration.factory.lazyValidation === true', () => {
@@ -553,8 +556,9 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide(Nothing, () => new Nothing())
-                    .provide(Nothing, () => new Nothing())).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide(Nothing, () => new Nothing())
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
 
@@ -621,10 +625,10 @@ describe('Context', () => {
                     .provide(Nothing, new Nothing())).not.toThrow();
                 expect(() => new Context()
                     .provide(Nothing, null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide(Nothing, undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate value WHEN configuration.factory.lazyValidation === false', () => {
@@ -653,13 +657,13 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide(Nothing, null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
                 }).provide(Nothing, undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate value WHEN configuration.factory.lazyValidation === true', () => {
@@ -688,8 +692,9 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide(Nothing, new Nothing())
-                    .provide(Nothing, new Nothing())).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide(Nothing, new Nothing())
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
 
@@ -769,10 +774,10 @@ describe('Context', () => {
                     .provide(NOTHING_TOKEN, () => new Nothing())).not.toThrow();
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, () => null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, () => undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate factory-returned value WHEN configuration.factory.lazyValidation === false', () => {
@@ -801,7 +806,7 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide(NOTHING_TOKEN, () => null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate factory-returned value WHEN configuration.factory.lazyValidation === true', () => {
@@ -830,8 +835,9 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, () => new Nothing())
-                    .provide(NOTHING_TOKEN, () => new Nothing())).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide(NOTHING_TOKEN, () => new Nothing())
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
 
@@ -900,10 +906,10 @@ describe('Context', () => {
                     .provide(NOTHING_TOKEN, new Nothing())).not.toThrow();
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('validate value WHEN configuration.factory.lazyValidation === false', () => {
@@ -932,13 +938,13 @@ describe('Context', () => {
                         lazyValidation: false,
                     },
                 }).provide(NOTHING_TOKEN, null as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: false,
                     },
                 }).provide(NOTHING_TOKEN, undefined as any as Nothing)).toThrowMatching(
-                    thrown => thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown => thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('do not validate value WHEN configuration.factory.lazyValidation === true', () => {
@@ -967,8 +973,9 @@ describe('Context', () => {
             it('prevent overriding token at the same context level', () => {
                 expect(() => new Context()
                     .provide(NOTHING_TOKEN, new Nothing())
-                    .provide(NOTHING_TOKEN, new Nothing())).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_DUPLICATE_FACTORY));
+                    .provide(NOTHING_TOKEN, new Nothing())
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_DUPLICATE_FACTORY === thrown.name);
             });
         });
     });
@@ -1075,7 +1082,7 @@ describe('Context', () => {
                 })
                     .provide('address', () => null)
                     .inject('address')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1083,7 +1090,7 @@ describe('Context', () => {
                 })
                     .provide('address', () => null)
                     .inject('address')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -1091,7 +1098,7 @@ describe('Context', () => {
                 })
                     .provide('address', () => undefined)
                     .inject('address')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1099,18 +1106,18 @@ describe('Context', () => {
                 })
                     .provide('address', () => undefined)
                     .inject('address')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN factory-evaluated promise value is empty', async () => {
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', () => Promise.resolve(null))
                     .inject('address')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', () => Promise.resolve(undefined))
                     .inject('address')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = Math.random().toString(36);
                 await expectAsync(new Context()
@@ -1126,13 +1133,14 @@ describe('Context', () => {
                         .provide('address', () => expected))
                     .provide('address', 'home', () => Math.random().toString(36))
                     .provide('address', 'work', () => Math.random().toString(36))
-                    .inject('address')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_UNDECIDABLE_BEAN));
+                    .inject('address')
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_UNDECIDABLE_BEAN === thrown.name);
             });
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -1237,7 +1245,7 @@ describe('Context', () => {
                 })
                     .provide('address', 'home', () => null)
                     .inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1245,7 +1253,7 @@ describe('Context', () => {
                 })
                     .provide('address', 'home', () => null)
                     .inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -1253,7 +1261,7 @@ describe('Context', () => {
                 })
                     .provide('address', 'home', () => undefined)
                     .inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1261,18 +1269,18 @@ describe('Context', () => {
                 })
                     .provide('address', 'home', () => undefined)
                     .inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN factory-evaluated promise value is empty', async () => {
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', 'home', () => Promise.resolve(null))
                     .inject('address', 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', 'home', () => Promise.resolve(undefined))
                     .inject('address', 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = Math.random().toString(36);
                 await expectAsync(new Context()
@@ -1283,7 +1291,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -1328,43 +1336,43 @@ describe('Context', () => {
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', () => null)
                     .inject('address', {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', () => undefined)
                     .inject('address', {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
 
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', 'home', () => null)
                     .inject('address', {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', 'home', () => undefined)
                     .inject('address', {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
 
-                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                await expectAsync(captureAsyncErrorNameField(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', () => Promise.resolve(null))
                     .inject('address', {})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide('address', () => Promise.resolve(undefined))
                     .inject('address', {})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 let context = new Context();
                 let factory = createSpy('stringFactorySpy').and.resolveTo(null);
-                await expectAsync(context
+                await expectAsync(captureAsyncErrorNameField(context
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
             });
 
@@ -1389,12 +1397,12 @@ describe('Context', () => {
                 expect(() => context.inject('counter', {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject('counter', {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject('counter', {
                     forceEvaluation: true,
@@ -1422,13 +1430,13 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
                 context = new Context().provide('counter', factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject('counter', {
+                await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject('counter', {
+                await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject('counter', {
                     forceEvaluation: true,
@@ -1462,13 +1470,13 @@ describe('Context', () => {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject('counter', {
                     forceEvaluation: true,
@@ -1503,15 +1511,15 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
                 context = new Context().provide('counter', '1-step', factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject('counter', {
+                await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject('counter', {
+                await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject('counter', {
                     forceEvaluation: true,
@@ -1630,7 +1638,7 @@ describe('Context', () => {
                 })
                     .provide(Nothing, () => null as any as Nothing)
                     .inject(Nothing)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1638,7 +1646,7 @@ describe('Context', () => {
                 })
                     .provide(Nothing, () => null as any as Nothing)
                     .inject(Nothing)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -1646,7 +1654,7 @@ describe('Context', () => {
                 })
                     .provide(Nothing, () => undefined as any as Nothing)
                     .inject(Nothing)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1654,7 +1662,7 @@ describe('Context', () => {
                 })
                     .provide(Nothing, () => undefined as any as Nothing)
                     .inject(Nothing)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN there is undecidable bean at any level of contexts', () => {
@@ -1664,13 +1672,14 @@ describe('Context', () => {
                         .provide(Nothing, () => expected))
                     .provide(Nothing, 'home', () => new Nothing())
                     .provide(Nothing, 'work', () => new Nothing())
-                    .inject(Nothing)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_UNDECIDABLE_BEAN));
+                    .inject(Nothing)
+                ).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_UNDECIDABLE_BEAN === thrown.name);
             });
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -1779,7 +1788,7 @@ describe('Context', () => {
                 })
                     .provide(Building, 'home', () => null as any as Building)
                     .inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1787,7 +1796,7 @@ describe('Context', () => {
                 })
                     .provide(Building, 'home', () => null as any as Building)
                     .inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -1795,7 +1804,7 @@ describe('Context', () => {
                 })
                     .provide(Building, 'home', () => undefined as any as Building)
                     .inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1803,12 +1812,12 @@ describe('Context', () => {
                 })
                     .provide(Building, 'home', () => undefined as any as Building)
                     .inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -1857,34 +1866,34 @@ describe('Context', () => {
                 expect(() => new Context({factory: {lazyValidation: true}})
                     .provide(Building, null as any as Building)
                     .inject(Building, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
                 expect(() => new Context({factory: {lazyValidation: true}})
                     .provide(Building, undefined as any as Building)
                     .inject(Building, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
 
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(Building, 'home', () => null as any as Building)
                     .inject(Building, {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(Building, 'home', () => undefined as any as Building)
                     .inject(Building, {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
 
                 let context = new Context();
                 let factory = createSpy('stringFactorySpy').and.resolveTo(null);
-                await expectAsync(context
+                await expectAsync(captureAsyncErrorNameField(context
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
             });
 
@@ -1910,12 +1919,12 @@ describe('Context', () => {
                 expect(() => context.inject(Building, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject(Building, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(Building, {
                     forceEvaluation: true,
@@ -1943,13 +1952,13 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(Building, factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject(Building, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject(Building, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject(Building, {
                     forceEvaluation: true,
@@ -1983,13 +1992,13 @@ describe('Context', () => {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(Building, {
                     forceEvaluation: true,
@@ -2024,15 +2033,15 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(Building, '1-step', factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject(Building, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject(Building, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject(Building, {
                     forceEvaluation: true,
@@ -2153,7 +2162,7 @@ describe('Context', () => {
                 })
                     .provide(NOTHING, () => null as any as Nothing)
                     .inject(NOTHING)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -2161,7 +2170,7 @@ describe('Context', () => {
                 })
                     .provide(NOTHING, () => null as any as Nothing)
                     .inject(NOTHING)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -2169,7 +2178,7 @@ describe('Context', () => {
                 })
                     .provide(NOTHING, () => undefined as any as Nothing)
                     .inject(NOTHING)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -2177,19 +2186,19 @@ describe('Context', () => {
                 })
                     .provide(NOTHING, () => undefined as any as Nothing)
                     .inject(NOTHING)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN promise-resolved value is empty', async () => {
                 const NOTHING_PROMISE: Context.Token<Promise<Nothing>> = Symbol('NOTHING_PROMISE');
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(NOTHING_PROMISE, Promise.resolve(null as any as Nothing))
                     .inject(NOTHING_PROMISE)
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(NOTHING_PROMISE, Promise.resolve(undefined as any as Nothing))
                     .inject(NOTHING_PROMISE)
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = new Nothing();
                 await expectAsync(new Context()
@@ -2200,14 +2209,14 @@ describe('Context', () => {
 
             it('fail WHEN factory-evaluated promise value is empty', async () => {
                 const NOTHING_PROMISE: Context.Token<Promise<Nothing>> = Symbol('NOTHING_PROMISE');
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(NOTHING_PROMISE, () => Promise.resolve(null as any as Nothing))
                     .inject(NOTHING_PROMISE)
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(NOTHING_PROMISE, () => Promise.resolve(undefined as any as Nothing))
                     .inject(NOTHING_PROMISE)
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = new Nothing();
                 await expectAsync(new Context()
@@ -2224,12 +2233,12 @@ describe('Context', () => {
                     .provide(NOTHING, 'home', () => new Nothing())
                     .provide(NOTHING, 'work', () => new Nothing())
                     .inject(NOTHING)).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_UNDECIDABLE_BEAN));
+                    thrown instanceof Error && Context.ERR_UNDECIDABLE_BEAN === thrown.name);
             });
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -2340,7 +2349,7 @@ describe('Context', () => {
                 })
                     .provide(BUILDING, 'home', () => null as any as Building)
                     .inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -2348,7 +2357,7 @@ describe('Context', () => {
                 })
                     .provide(BUILDING, 'home', () => null as any as Building)
                     .inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyValidation: true,
@@ -2356,7 +2365,7 @@ describe('Context', () => {
                 })
                     .provide(BUILDING, 'home', () => undefined as any as Building)
                     .inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -2364,19 +2373,19 @@ describe('Context', () => {
                 })
                     .provide(BUILDING, 'home', () => undefined as any as Building)
                     .inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
             });
 
             it('fail WHEN promise-resolved value is empty', async () => {
                 const BUILDING_PROMISE: Context.Token<Promise<Building>> = Symbol('BUILDING_PROMISE');
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING_PROMISE, 'home', Promise.resolve(null as any as Building))
                     .inject(BUILDING_PROMISE, 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING_PROMISE, 'home', Promise.resolve(undefined as any as Building))
                     .inject(BUILDING_PROMISE, 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = new Building();
                 await expectAsync(new Context()
@@ -2387,14 +2396,14 @@ describe('Context', () => {
 
             it('fail WHEN factory-evaluated promise value is empty', async () => {
                 const BUILDING_PROMISE: Context.Token<Promise<Building>> = Symbol('BUILDING_PROMISE');
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING_PROMISE, 'home', () => Promise.resolve(null as any as Building))
                     .inject(BUILDING_PROMISE, 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context()
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING_PROMISE, 'home', () => Promise.resolve(undefined as any as Building))
                     .inject(BUILDING_PROMISE, 'home')
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 const expected = new Building();
                 await expectAsync(new Context()
@@ -2405,7 +2414,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_MISSING_TOKEN));
+                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
             });
         });
 
@@ -2457,43 +2466,43 @@ describe('Context', () => {
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING, () => null as any as Building)
                     .inject(BUILDING, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING, () => undefined as any as Building)
                     .inject(BUILDING, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
 
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING, 'home', () => null as any as Building)
                     .inject(BUILDING, {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING, 'home', () => undefined as any as Building)
                     .inject(BUILDING, {qualifier: 'home'})).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
 
-                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                await expectAsync(captureAsyncErrorNameField(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING_PROMISE, () => Promise.resolve(null as any as Building))
                     .inject(BUILDING_PROMISE, {})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
-                await expectAsync(new Context({factory: {lazyFunctionEvaluation: true}})
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
+                await expectAsync(captureAsyncErrorNameField(new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(BUILDING_PROMISE, () => Promise.resolve(undefined as any as Building))
                     .inject(BUILDING_PROMISE, {})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
 
                 let context = new Context();
                 let factory = createSpy('stringFactorySpy').and.resolveTo(null);
-                await expectAsync(context
+                await expectAsync(captureAsyncErrorNameField(context
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
-                await expectAsync(new Context()
+                await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
-                ).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledOnceWith(context);
             });
 
@@ -2519,12 +2528,12 @@ describe('Context', () => {
                 expect(() => context.inject(BUILDING, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject(BUILDING, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
@@ -2552,13 +2561,13 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject(BUILDING_PROMISE, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject(BUILDING_PROMISE, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
@@ -2592,13 +2601,13 @@ describe('Context', () => {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(2);
                 expect(() => context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
                 })).toThrowMatching(thrown =>
-                    thrown instanceof Error && thrown.message.startsWith(Context.ERR_EMPTY_VALUE));
+                    thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
                 expect(factory).toHaveBeenCalledTimes(3);
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
@@ -2633,15 +2642,15 @@ describe('Context', () => {
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, '1-step', factory);
                 expect(factory).toHaveBeenCalledOnceWith(context);
-                await expectAsync(context.inject(BUILDING_PROMISE, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(2);
-                await expectAsync(context.inject(BUILDING_PROMISE, {
+                await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                     qualifier: '1-step',
-                })).toBeRejectedWithError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+                }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
                 expect(factory).toHaveBeenCalledTimes(3);
                 await expectAsync(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
@@ -2662,7 +2671,18 @@ describe('Context', () => {
                 .provide('fibonacci', createSpy('springFactorySpy')
                     .and.returnValues(0, undefined))
                 .inject('fibonacci', {forceEvaluation: true})
-            ).toThrowError(new RegExp(`^${Context.ERR_EMPTY_VALUE}`));
+            ).toThrowMatching(thrown =>
+                thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
         });
     });
-})
+});
+
+function captureAsyncErrorNameField<T>(value: T): T {
+    return (value as any)?.['catch']?.((reason: unknown) => {
+        if (reason instanceof Error) {
+            return Promise.reject({name: reason.name});
+        }
+
+        return reason;
+    }) ?? value;
+}

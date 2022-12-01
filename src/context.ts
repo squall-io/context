@@ -49,11 +49,10 @@ export class Context {
 
         for (const qualifier of qualifiers) {
             if (this.#hasOwn(token, qualifier)) {
-                throw new Error(Context.#format(
-                    '{0}: Duplicate bean definition for Token<{1}>{2}.',
-                    Context.ERR_DUPLICATE_FACTORY, Context.#tokenToString(token),
-                    Context.#DEFAULT_QUALIFIER === qualifier
-                        ? '' : Context.#format(' Qualifier<{0}>', qualifier)));
+                const suffix = Context.#DEFAULT_QUALIFIER === qualifier
+                    ? '' : Context.#format(' Qualifier<{0}>', qualifier);
+                throw Context.#error(Context.ERR_DUPLICATE_FACTORY,
+                    'Duplicate bean definition for Token<{0}>{1}.', Context.#tokenToString(token), suffix);
             }
         }
 
@@ -143,19 +142,13 @@ export class Context {
 
         if (0 < undecided.size) {
             // NOTE: Context.#DEFAULT_QUALIFIER is implied: see how the set if filled in
-            throw new Error(Context.#format(
-                '{0}: Undecidable bean for Token<{1}>.',
-                Context.ERR_UNDECIDABLE_BEAN, Context.#tokenToString(token)));
+            throw Context.#error(Context.ERR_UNDECIDABLE_BEAN,
+                'Undecidable bean for Token<{0}>.', Context.#tokenToString(token));
         } else if (Context.#isEmpty(value)) {
-            if (Context.#DEFAULT_QUALIFIER == qualifier) {
-                throw new Error(Context.#format(
-                    '{0}: No bean nor bean-factory provided for Token<{1}>.',
-                    Context.ERR_MISSING_TOKEN, Context.#tokenToString(token)));
-            } else {
-                throw new Error(Context.#format(
-                    '{0}: No bean nor bean-factory provided for Token<{1}> Qualifier<{2}>.',
-                    Context.ERR_MISSING_TOKEN, Context.#tokenToString(token), qualifier));
-            }
+            const suffix = Context.#DEFAULT_QUALIFIER === qualifier
+                ? '' : Context.#format(' Qualifier<{0}>', qualifier);
+            throw Context.#error(Context.ERR_MISSING_TOKEN,
+                'No bean nor bean-factory provided for Token<{0}>{1}.', Context.#tokenToString(token), suffix);
         }
 
         return value as Context.Value<T>;
@@ -270,32 +263,32 @@ export class Context {
                     .map(qualifier => Context.#tokenToString(qualifier)).join(', '));
         }
 
-        throw new Error(Context.#format(
-            '{0}: Empty value ({1}) resolved for Token<{2}>{3}.',
-            Context.ERR_EMPTY_VALUE, value, Context.#tokenToString(token), aboutQualifiers));
+        throw this.#error(Context.ERR_EMPTY_VALUE,
+            'Empty value ({0}) resolved for Token<{1}>{2}.',
+            value, Context.#tokenToString(token), aboutQualifiers);
     }
 
     static #validValue<V>(valueWithContext: [V, Context] | void,
                           token: Context.Token<any>, qualifier: string | symbol): [V, Context] | void {
         if (this.#isEmpty(valueWithContext?.[0])) {
             if (!valueWithContext?.[1]) {
-                throw new Error(Context.#format(
-                    '{0}: Empty value ({1}) resolved for Token<{2}>{3}.',
-                    Context.ERR_MISSING_TOKEN, valueWithContext?.[0], Context.#tokenToString(token),
-                    Context.#DEFAULT_QUALIFIER === qualifier
-                        ? '' : Context.#format(' Qualifier<{0}>', qualifier)));
+                const suffix = Context.#DEFAULT_QUALIFIER === qualifier
+                    ? '' : Context.#format(' Qualifier<{0}>', qualifier);
+                throw this.#error(Context.ERR_MISSING_TOKEN,
+                    'Empty value ({0}) resolved for Token<{1}>{2}.',
+                    valueWithContext?.[0], Context.#tokenToString(token), suffix);
             } else if (Context.#DEFAULT_QUALIFIER === qualifier) {
-                throw new Error(Context.#format(
-                    '{0}: Empty value ({1}) resolved for Token<{2}>.',
-                    Context.ERR_EMPTY_VALUE, valueWithContext?.[0], Context.#tokenToString(token)));
+                throw this.#error(Context.ERR_EMPTY_VALUE,
+                    'Empty value ({0}) resolved for Token<{1}>.',
+                    valueWithContext?.[0], Context.#tokenToString(token));
             } else {
-                throw new Error(Context.#format(
-                    '{0}: Empty value ({1}) resolved for Token<{2}> Qualifier<{3}>.',
-                    Context.ERR_EMPTY_VALUE, valueWithContext?.[0], Context.#tokenToString(token), qualifier));
+                throw this.#error(Context.ERR_EMPTY_VALUE,
+                    'Empty value ({0}) resolved for Token<{1}> Qualifier<{2}>.',
+                    valueWithContext?.[0], Context.#tokenToString(token), qualifier);
             }
         } else if (this.#isThenable(valueWithContext?.[0])) {
-            const thenable = valueWithContext?.[0]
-                .then?.(target => this.#validValue([target, valueWithContext?.[1]], token, qualifier)?.[0]);
+            const thenable = valueWithContext?.[0].then?.(target =>
+                this.#validValue([target, valueWithContext?.[1]], token, qualifier)?.[0]);
 
             return [thenable as V, valueWithContext?.[1]!];
         }
@@ -332,6 +325,12 @@ export class Context {
 
     static #isEmpty(value: any): value is null | undefined {
         return null === value || undefined === value;
+    }
+
+    static #error(name: string, template: string, ...values: any[]): Error {
+        const error = new Error(this.#format(template, ...values))
+        error.name = name;
+        return error;
     }
 }
 
