@@ -405,8 +405,7 @@ We follow best practices for Open-Source Software contributions, including:
 ### Upcoming
 
 + [ ] Coming soon
-+ [_] Work In Progress
-+ [x] Near landing
++ [x] Work In Progress
 
 Here is the plan:
 
