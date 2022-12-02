@@ -56,20 +56,19 @@ export class Context {
         }
 
         let [factory, value] = [
-            'function' === typeof beanDefinition ? beanDefinition as { (context: Context): unknown } : undefined,
+            'function' === typeof beanDefinition ? beanDefinition as Context.Factory<unknown> : undefined,
             'function' === typeof beanDefinition ? undefined : beanDefinition as unknown];
 
         const IS_EAGER_FACTORY_EVALUATION = !this.#configuration.factory.lazyFunctionEvaluation;
 
         if (factory && IS_EAGER_FACTORY_EVALUATION) {
-            // @ts-ignore
-            value = factory(this, token, ...qualifiers.includes(Context.#DEFAULT_QUALIFIER) ? [] : qualifiers);
+            value = factory(this, token, ...Context.#DEFAULT_QUALIFIER === qualifiers[0] ? [] : qualifiers as string[]);
         }
 
         const IS_EAGER_VALIDATION = !this.#configuration.factory.lazyValidation;
-        value = Context.#isThenable(value) || (IS_EAGER_VALIDATION && (!factory || IS_EAGER_FACTORY_EVALUATION))
-            ? Context.#validValue(value, token, qualifiers[0]!)
-            : value;
+        const SHOULD_VALIDATE = Context.#isThenable(value)
+            || (IS_EAGER_VALIDATION && (!factory || IS_EAGER_FACTORY_EVALUATION));
+        value = SHOULD_VALIDATE ? Context.#validValue(value, token, qualifiers[0]!) : value;
 
         if (factory) {
             for (const qualifier of qualifiers) {
@@ -93,7 +92,8 @@ export class Context {
     inject<T extends Context.Token<any>>(token: T): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, injectOptions: Context.InjectOptions): Context.Value<T>;
-    inject<T extends Context.Token<any>>(token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
+    inject<T extends Context.Token<any>>(
+        token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
         const qualifier = ('string' === typeof qualifierOrInjectOptions
             ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
         const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
