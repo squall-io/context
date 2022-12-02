@@ -2674,6 +2674,20 @@ describe('Context', () => {
             ).toThrowMatching(thrown =>
                 thrown instanceof Error && Context.ERR_EMPTY_VALUE === thrown.name);
         });
+
+        it('call factory with the context on which the bean definition was provided', () => {
+            let gravityFactorySpy = createSpy('gravityFactorySpy').and.returnValue(9.807);
+            const context = new Context().provide('gravity', gravityFactorySpy);
+            expect(gravityFactorySpy).toHaveBeenCalledOnceWith(context);
+
+            gravityFactorySpy = createSpy('gravityFactorySpy').and.returnValue(9.807);
+            const parent = new Context({factory:{lazyFunctionEvaluation: true}})
+                .provide('gravity', gravityFactorySpy);
+            new Context(parent).inject('gravity');
+            expect(gravityFactorySpy.calls.count()).toBe(1);
+            expect(gravityFactorySpy.calls.first().args[0]).toBe(parent);
+            expect(gravityFactorySpy.calls.first().args.length).toBe(1);
+        });
     });
 });
 

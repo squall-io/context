@@ -113,7 +113,7 @@ export class Context {
 
             if (factoryWithContext?.[0]) {
                 [value] = Context.#validValue([
-                    factoryWithContext?.[0]?.(this),
+                    factoryWithContext?.[0]?.(factoryWithContext?.[1]),
                     factoryWithContext?.[1]!
                 ], token, qualifier) ?? [undefined, undefined];
             } else {
@@ -126,7 +126,7 @@ export class Context {
                 const factoryWithContext = this.#resolveFactory(token, qualifier, undecided);
 
                 [value, context] = Context.#validValue([
-                    factoryWithContext?.[0]?.(this),
+                    factoryWithContext?.[0]?.(factoryWithContext?.[1]),
                     factoryWithContext?.[1]!
                 ], token, qualifier) ?? [undefined, undefined];
 
