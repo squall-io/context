@@ -94,11 +94,10 @@ export class Context {
         return this;
     }
 
-    inject<T extends Context.Token<any>>(token: T): Context.Value<T>; // TODO: Document undecidable bean error
+    inject<T extends Context.Token<any>>(token: T): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
-    inject<T extends Context.Token<any>>(token: T, injectOptions?: Context.InjectOptions): Context.Value<T>;
-    inject<T extends Context.Token<any>>(token: T,
-                                         qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
+    inject<T extends Context.Token<any>>(token: T, injectOptions: Context.InjectOptions): Context.Value<T>;
+    inject<T extends Context.Token<any>>(token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
         const qualifier = ('string' === typeof qualifierOrInjectOptions
             ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
         const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
@@ -338,10 +337,7 @@ export namespace Context {
         : T extends Constructor<infer I> ? I | Factory<I>
             : T extends string ? Factory<unknown>
                 : never; // NOTE: (unknown | whatever) results in unknown
-    export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
-        : T extends Constructor<infer I> ? I
-            : T extends string ? unknown
-                : never;
+    export type Value<T extends Token<any>> = T extends Token<infer I> ? I : never;
     export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
     export type Constructor<T> = { new(...parameters: any[]): T };
     export type TokenSymbol<T> = symbol & Record<never, T>;
