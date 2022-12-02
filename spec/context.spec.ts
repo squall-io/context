@@ -182,7 +182,7 @@ describe('Context', () => {
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
                 const context = new Context().provide('target', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'target');
             });
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
@@ -193,7 +193,7 @@ describe('Context', () => {
                     },
                 }).provide('target', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'target');
             });
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
@@ -324,7 +324,7 @@ describe('Context', () => {
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
                 const context = new Context().provide('target', 'primary', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'target', 'primary');
             });
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
@@ -335,7 +335,7 @@ describe('Context', () => {
                     },
                 }).provide('target', ['primary', 'write-candidate'], factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'target', 'primary', 'write-candidate');
             });
 
             it('validate factory-returned value', () => {
@@ -457,7 +457,7 @@ describe('Context', () => {
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
                 const context = new Context().provide(Nothing, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
             });
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
@@ -469,7 +469,7 @@ describe('Context', () => {
                     },
                 }).provide(Nothing, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
             });
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
@@ -603,7 +603,7 @@ describe('Context', () => {
                     },
                 }).provide(Nothing, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
             });
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
@@ -736,7 +736,7 @@ describe('Context', () => {
                 const factory = createSpy('stringFactorySpy').and.returnValue(false);
                 const context = new Context().provide(NOTHING_TOKEN, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING_TOKEN);
             });
 
             it('invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === false', () => {
@@ -748,7 +748,7 @@ describe('Context', () => {
                     },
                 }).provide(NOTHING_TOKEN, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING_TOKEN);
             });
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
@@ -884,7 +884,7 @@ describe('Context', () => {
                     },
                 }).provide(NOTHING_TOKEN, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING_TOKEN);
             });
 
             it('do not invoke factory function WHEN context configuration.factory.lazyFunctionEvaluation === true', () => {
@@ -1018,22 +1018,22 @@ describe('Context', () => {
                     .and.returnValues(expected, Math.random().toString(36));
                 const context = new Context().provide('address', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
                 expect(context.inject('address')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
                 expect(context.inject('address')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
 
                 const otherExpected = Math.random().toString(36);
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, Math.random().toString(36));
                 const otherContext = new Context().provide('address', otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address');
                 expect(otherContext.inject('address')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address');
                 expect(otherContext.inject('address')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address');
 
                 const anotherExpected = Math.random().toString(36);
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -1047,9 +1047,9 @@ describe('Context', () => {
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext
                     .inject('address')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, 'address');
                 expect(anotherContext.inject('address')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, 'address');
             });
 
             it('evaluate factory with invocation context', () => {
@@ -1059,7 +1059,7 @@ describe('Context', () => {
                     .provide('address', factory));
 
                 context.inject('address');
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -1069,9 +1069,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject('address')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
                 expect(parent.inject('address')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address');
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -1181,22 +1181,22 @@ describe('Context', () => {
                     .and.returnValues(expected, Math.random().toString(36));
                 const context = new Context().provide('address', 'home', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
                 expect(context.inject('address', 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
                 expect(context.inject('address', 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
 
                 const otherExpected = Math.random().toString(36);
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, Math.random().toString(36));
                 const otherContext = new Context().provide('address', 'home', otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address', 'home');
                 expect(otherContext.inject('address', 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address', 'home');
                 expect(otherContext.inject('address', 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, 'address', 'home');
 
                 const anotherExpected = Math.random().toString(36);
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -1210,9 +1210,9 @@ describe('Context', () => {
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext
                     .inject('address', 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, 'address', 'home');
                 expect(anotherContext.inject('address', 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, 'address', 'home');
             });
 
             it('evaluate factory with invocation context', () => {
@@ -1222,7 +1222,7 @@ describe('Context', () => {
                     .provide('address', 'home', factory));
 
                 context.inject('address', 'home');
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -1232,9 +1232,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject('address', 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
                 expect(parent.inject('address', 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'home');
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -1322,14 +1322,14 @@ describe('Context', () => {
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
                 ).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(expected);
                 await expectAsync(new Context()
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
                 ).toBeResolvedTo(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'work');
             });
 
             it('fail WHEN value is empty', async () => {
@@ -1366,20 +1366,20 @@ describe('Context', () => {
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
                 await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide('address', 'work', factory)
                     .inject('address', {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'address', 'work');
             });
 
             it('revaluate factory and validate value WHEN injectOptions.forceEvaluation === true, without caching the result', async () => {
                 let factory = createSpy('stringFactorySpy').and.returnValues(0, 1, 2);
                 let context = new Context().provide('counter', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter');
                 expect(context.inject('counter', {
                     forceEvaluation: true,
                 })).toBe(1);
@@ -1393,7 +1393,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(0, null, undefined, 2);
                 context = new Context().provide('counter', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter');
                 expect(() => context.inject('counter', {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
@@ -1414,7 +1414,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
                     Promise.resolve(1), Promise.resolve(2));
                 context = new Context().provide('counter', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter');
                 await expectAsync(context.inject('counter', {
                     forceEvaluation: true,
                 })).toBeResolvedTo(1);
@@ -1429,7 +1429,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
                 context = new Context().provide('counter', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter');
                 await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
                 }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
@@ -1447,7 +1447,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(0, 1, 2);
                 context = new Context().provide('counter', '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter', '1-step');
                 expect(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -1465,7 +1465,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(0, null, undefined, 2);
                 context = new Context().provide('counter', '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter', '1-step');
                 expect(() => context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -1491,7 +1491,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy')
                     .and.returnValues(Promise.resolve(0), Promise.resolve(1), Promise.resolve(2));
                 context = new Context().provide('counter', '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter', '1-step');
                 await expectAsync(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -1510,7 +1510,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(0),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(2));
                 context = new Context().provide('counter', '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, 'counter', '1-step');
                 await expectAsync(captureAsyncErrorNameField(context.inject('counter', {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -1574,22 +1574,22 @@ describe('Context', () => {
                     .and.returnValues(expected, new Nothing());
                 const context = new Context().provide(Nothing, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
                 expect(context.inject(Nothing)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
                 expect(context.inject(Nothing)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
 
                 const otherExpected = new Nothing();
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, new Nothing());
                 const otherContext = new Context().provide(Nothing, otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Nothing);
                 expect(otherContext.inject(Nothing)).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Nothing);
                 expect(otherContext.inject(Nothing)).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Nothing);
 
                 const anotherExpected = new Nothing();
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -1603,9 +1603,9 @@ describe('Context', () => {
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext
                     .inject(Nothing)).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, Nothing);
                 expect(anotherContext.inject(Nothing)).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, Nothing);
             });
 
             it('evaluate factory with invocation context', () => {
@@ -1615,7 +1615,7 @@ describe('Context', () => {
                     .provide(Nothing, factory));
 
                 context.inject(Nothing);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -1625,9 +1625,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject(Nothing)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
                 expect(parent.inject(Nothing)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Nothing);
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -1724,22 +1724,22 @@ describe('Context', () => {
                     .and.returnValues(expected, new Building());
                 const context = new Context().provide(Building, 'home', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
                 expect(context.inject(Building, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
                 expect(context.inject(Building, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
 
                 const otherExpected = new Building();
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, new Building());
                 const otherContext = new Context().provide(Building, 'home', otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Building, 'home');
                 expect(otherContext.inject(Building, 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Building, 'home');
                 expect(otherContext.inject(Building, 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Building, 'home');
 
                 const anotherExpected = new Building();
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -1752,9 +1752,9 @@ describe('Context', () => {
 
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext.inject(Building, 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, Building, 'home');
                 expect(anotherContext.inject(Building, 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, Building, 'home');
             });
 
             it('evaluate factory with invocation context', () => {
@@ -1764,7 +1764,7 @@ describe('Context', () => {
                     .provide(Building, 'home', factory));
 
                 context.inject(Building, 'home');
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -1774,9 +1774,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject(Building, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
                 expect(parent.inject(Building, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -1851,14 +1851,14 @@ describe('Context', () => {
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
                 ).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(expected);
                 await expectAsync(new Context()
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
                 ).toBeResolvedTo(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'work');
             });
 
             it('fail WHEN value is empty', async () => {
@@ -1886,21 +1886,21 @@ describe('Context', () => {
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
                 await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(Building, 'work', factory)
                     .inject(Building, {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, 'work');
             });
 
             it('revaluate factory and validate value WHEN injectOptions.forceEvaluation === true, without caching the result', async () => {
                 const [ZERO, ONE, TWO] = [new Building(), new Building(), new Building()];
                 let factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 let context = new Context().provide(Building, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building);
                 expect(context.inject(Building, {
                     forceEvaluation: true,
                 })).toBe(ONE);
@@ -1914,7 +1914,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
                 context = new Context().provide(Building, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building);
                 expect(() => context.inject(Building, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
@@ -1935,7 +1935,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(ONE), Promise.resolve(TWO));
                 context = new Context().provide(Building, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building);
                 await expectAsync(context.inject(Building, {
                     forceEvaluation: true,
                 })).toBeResolvedTo(ONE);
@@ -1950,7 +1950,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(Building, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building);
                 await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
                 }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
@@ -1968,7 +1968,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 context = new Context().provide(Building, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, '1-step');
                 expect(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -1986,7 +1986,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
                 context = new Context().provide(Building, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, '1-step');
                 expect(() => context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2012,7 +2012,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy')
                     .and.returnValues(Promise.resolve(ZERO), Promise.resolve(ONE), Promise.resolve(TWO));
                 context = new Context().provide(Building, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, '1-step');
                 await expectAsync(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2031,7 +2031,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(Building, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, Building, '1-step');
                 await expectAsync(captureAsyncErrorNameField(context.inject(Building, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2097,22 +2097,22 @@ describe('Context', () => {
                     .and.returnValues(expected, new Nothing());
                 const context = new Context().provide(NOTHING, factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
                 expect(context.inject(NOTHING)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
                 expect(context.inject(NOTHING)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
 
                 const otherExpected = new Nothing();
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, new Nothing());
                 const otherContext = new Context().provide(NOTHING, otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, NOTHING);
                 expect(otherContext.inject(NOTHING)).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, NOTHING);
                 expect(otherContext.inject(NOTHING)).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, NOTHING);
 
                 const anotherExpected = new Nothing();
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -2126,9 +2126,9 @@ describe('Context', () => {
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext
                     .inject(NOTHING)).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, NOTHING);
                 expect(anotherContext.inject(NOTHING)).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, NOTHING);
             });
 
             it('evaluate factory with invocation context', () => {
@@ -2138,7 +2138,7 @@ describe('Context', () => {
                     .provide(NOTHING, factory));
 
                 context.inject(NOTHING);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -2148,9 +2148,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject(NOTHING)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
                 expect(parent.inject(NOTHING)).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, NOTHING);
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -2284,22 +2284,22 @@ describe('Context', () => {
                     .and.returnValues(expected, new Building());
                 const context = new Context().provide(BUILDING, 'home', factory);
 
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
                 expect(context.inject(BUILDING, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
                 expect(context.inject(BUILDING, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
 
                 const otherExpected = new Building();
                 const otherFactory = createSpy('stringFactorySpy')
                     .and.returnValues(otherExpected, new Building());
                 const otherContext = new Context().provide(BUILDING, 'home', otherFactory);
 
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, BUILDING, 'home');
                 expect(otherContext.inject(BUILDING, 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, BUILDING, 'home');
                 expect(otherContext.inject(BUILDING, 'home')).toBe(otherExpected);
-                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext);
+                expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, BUILDING, 'home');
 
                 const anotherExpected = new Building();
                 const anotherFactory = createSpy('stringFactorySpy')
@@ -2313,9 +2313,9 @@ describe('Context', () => {
                 expect(anotherFactory).not.toHaveBeenCalled();
                 expect(anotherContext
                     .inject(BUILDING, 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, BUILDING, 'home');
                 expect(anotherContext.inject(BUILDING, 'home')).toBe(anotherExpected);
-                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
+                expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext, BUILDING, 'home');
             });
 
             it('evaluate factory with invocation context', () => {
@@ -2325,7 +2325,7 @@ describe('Context', () => {
                     .provide(BUILDING, 'home', factory));
 
                 context.inject(BUILDING, 'home');
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
@@ -2335,9 +2335,9 @@ describe('Context', () => {
                 const context = new Context(parent);
 
                 expect(context.inject(BUILDING, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
                 expect(parent.inject(BUILDING, 'home')).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'home');
             });
 
             it('fail WHEN factory-evaluated value is empty', () => {
@@ -2451,14 +2451,14 @@ describe('Context', () => {
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
                 ).toBe(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(expected);
                 await expectAsync(new Context()
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
                 ).toBeResolvedTo(expected);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'work');
             });
 
             it('fail WHEN value is empty', async () => {
@@ -2495,21 +2495,21 @@ describe('Context', () => {
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'work');
                 context = new Context();
                 factory = createSpy('stringFactorySpy').and.resolveTo(undefined);
                 await expectAsync(captureAsyncErrorNameField(new Context()
                     .provide(BUILDING, 'work', factory)
                     .inject(BUILDING, {qualifier: 'work', forceEvaluation: false})
                 )).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, 'work');
             });
 
             it('revaluate factory and validate value WHEN injectOptions.forceEvaluation === true, without caching the result', async () => {
                 const [ZERO, ONE, TWO] = [new Building(), new Building(), new Building()];
                 let factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 let context = new Context().provide(BUILDING, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING);
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
                 })).toBe(ONE);
@@ -2523,7 +2523,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
                 context = new Context().provide(BUILDING, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING);
                 expect(() => context.inject(BUILDING, {
                     forceEvaluation: true,
                 })).toThrowMatching(thrown =>
@@ -2544,7 +2544,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(ONE), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING_PROMISE);
                 await expectAsync(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                 })).toBeResolvedTo(ONE);
@@ -2559,7 +2559,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING_PROMISE);
                 await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                 }))).toBeRejectedWith({name: Context.ERR_EMPTY_VALUE});
@@ -2577,7 +2577,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 context = new Context().provide(BUILDING, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, '1-step');
                 expect(context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2595,7 +2595,7 @@ describe('Context', () => {
 
                 factory = createSpy('stringFactorySpy').and.returnValues(ZERO, null, undefined, TWO);
                 context = new Context().provide(BUILDING, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING, '1-step');
                 expect(() => context.inject(BUILDING, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2621,7 +2621,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy')
                     .and.returnValues(Promise.resolve(ZERO), Promise.resolve(ONE), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING_PROMISE, '1-step');
                 await expectAsync(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2640,7 +2640,7 @@ describe('Context', () => {
                 factory = createSpy('stringFactorySpy').and.returnValues(Promise.resolve(ZERO),
                     Promise.resolve(null), Promise.resolve(undefined), Promise.resolve(TWO));
                 context = new Context().provide(BUILDING_PROMISE, '1-step', factory);
-                expect(factory).toHaveBeenCalledOnceWith(context);
+                expect(factory).toHaveBeenCalledOnceWith(context, BUILDING_PROMISE, '1-step');
                 await expectAsync(captureAsyncErrorNameField(context.inject(BUILDING_PROMISE, {
                     forceEvaluation: true,
                     qualifier: '1-step',
@@ -2677,7 +2677,7 @@ describe('Context', () => {
         it('call factory with the context on which the bean definition was provided', () => {
             let gravityFactorySpy = createSpy('gravityFactorySpy').and.returnValue(9.807);
             const context = new Context().provide('gravity', gravityFactorySpy);
-            expect(gravityFactorySpy).toHaveBeenCalledOnceWith(context);
+            expect(gravityFactorySpy).toHaveBeenCalledOnceWith(context, 'gravity');
 
             gravityFactorySpy = createSpy('gravityFactorySpy').and.returnValue(9.807);
             const parent = new Context({factory: {lazyFunctionEvaluation: true}})
@@ -2685,7 +2685,8 @@ describe('Context', () => {
             new Context(parent).inject('gravity');
             expect(gravityFactorySpy.calls.count()).toBe(1);
             expect(gravityFactorySpy.calls.first().args[0]).toBe(parent);
-            expect(gravityFactorySpy.calls.first().args.length).toBe(1);
+            expect(gravityFactorySpy.calls.first().args[1]).toBe('gravity');
+            expect(gravityFactorySpy.calls.first().args).toHaveSize(2);
         });
 
         it('inject resolve bean definition (both bean and factory) one context level at a time', () => {

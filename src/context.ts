@@ -62,7 +62,8 @@ export class Context {
         const IS_EAGER_FACTORY_EVALUATION = !this.#configuration.factory.lazyFunctionEvaluation;
 
         if (factory && IS_EAGER_FACTORY_EVALUATION) {
-            value = factory(this);
+            // @ts-ignore
+            value = factory(this, token, ...qualifiers.includes(Context.#DEFAULT_QUALIFIER) ? [] : qualifiers);
         }
 
         const IS_EAGER_VALIDATION = !this.#configuration.factory.lazyValidation;
@@ -110,11 +111,13 @@ export class Context {
 
             const value: Context.Value<T> = Context.#validValue(
                 forceEvaluation ? 'factory' in definition
-                        ? definition.factory?.(context)
+                        ? definition.factory?.(context, token,
+                            ...Context.#DEFAULT_QUALIFIER === qualifier ? [] : [qualifier])
                         : (definition as any)['value']
                     : 'value' in definition
                         ? (definition as any)['value']
-                        : (definition as any)['factory']?.(context),
+                        : (definition as any)['factory']?.(context, token,
+                            ...Context.#DEFAULT_QUALIFIER === qualifier ? [] : [qualifier]),
                 token, qualifier);
 
             if (!('value' in definition)) {
@@ -270,7 +273,7 @@ export namespace Context {
     export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
     export type Constructor<T> = { new(...parameters: any[]): T };
     export type TokenSymbol<T> = symbol & Record<never, T>;
-    export type Factory<T> = { (context: Context): T };
+    export type Factory<T> = { (context: Context, token: Token<T>, ...qualifiers: string[]): T };
     export type DeepPartial<T> = T extends (null | undefined | boolean | number | string) ? T : {
         [K in keyof T]?: DeepPartial<T[K]>;
     };
