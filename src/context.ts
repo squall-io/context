@@ -29,13 +29,12 @@ export class Context {
     }
 
     provide<T extends Context.Token<any>>(
-        token: T, valueOrFactory: Context.ValueOrFactory<T>): this;
+        token: T, beanDefinition: Context.BeanDefinition<T>): this;
     provide<T extends Context.Token<any>>(
-        token: T, qualifiers: string | string[],
-        valueOrFactory: Context.ValueOrFactory<T>): this;
+        token: T, qualifiers: string | string[], beanDefinition: Context.BeanDefinition<T>): this;
     provide<T extends Context.Token<any>>(
-        token: T, theQualifiers: string | string[] | Context.ValueOrFactory<T>,
-        valueOrFactory?: Context.ValueOrFactory<T>): this {
+        token: T, theQualifiers: string | string[] | Context.BeanDefinition<T>,
+        beanDefinition?: Context.BeanDefinition<T>): this {
         const qualifiers: (string | symbol)[] = 2 === arguments.length
             ? [Context.#DEFAULT_QUALIFIER]
             : Array.isArray(theQualifiers)
@@ -43,9 +42,9 @@ export class Context {
                     ? [Context.#DEFAULT_QUALIFIER]
                     : theQualifiers
                 : [theQualifiers];
-        valueOrFactory = 2 === arguments.length
-            ? theQualifiers as Context.ValueOrFactory<T>
-            : valueOrFactory;
+        beanDefinition = 2 === arguments.length
+            ? theQualifiers as Context.BeanDefinition<T>
+            : beanDefinition;
 
         for (const qualifier of qualifiers) {
             if (this.#hasOwn(token, qualifier)) {
@@ -57,8 +56,8 @@ export class Context {
         }
 
         let [factory, value] = [
-            'function' === typeof valueOrFactory ? valueOrFactory as { (context: Context): unknown } : undefined,
-            'function' === typeof valueOrFactory ? undefined : valueOrFactory as unknown];
+            'function' === typeof beanDefinition ? beanDefinition as { (context: Context): unknown } : undefined,
+            'function' === typeof beanDefinition ? undefined : beanDefinition as unknown];
 
         if (factory && !this.#configuration.factory.lazyFunctionEvaluation) {
             value = factory(this);
@@ -335,7 +334,7 @@ export class Context {
 }
 
 export namespace Context {
-    export type ValueOrFactory<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | Factory<I>
+    export type BeanDefinition<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | Factory<I>
         : T extends Constructor<infer I> ? I | Factory<I>
             : T extends string ? Factory<unknown>
                 : never; // NOTE: (unknown | whatever) results in unknown
