@@ -1140,7 +1140,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -1291,7 +1291,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('address', 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -1679,7 +1679,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -1751,8 +1751,7 @@ describe('Context', () => {
                 }).provide(Building, 'home', anotherFactory);
 
                 expect(anotherFactory).not.toHaveBeenCalled();
-                expect(anotherContext
-                    .inject(Building, 'home')).toBe(anotherExpected);
+                expect(anotherContext.inject(Building, 'home')).toBe(anotherExpected);
                 expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
                 expect(anotherContext.inject(Building, 'home')).toBe(anotherExpected);
                 expect(anotherFactory).toHaveBeenCalledOnceWith(anotherContext);
@@ -1817,7 +1816,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject(Building, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -1866,11 +1865,11 @@ describe('Context', () => {
                 expect(() => new Context({factory: {lazyValidation: true}})
                     .provide(Building, null as any as Building)
                     .inject(Building, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
                 expect(() => new Context({factory: {lazyValidation: true}})
                     .provide(Building, undefined as any as Building)
                     .inject(Building, {})).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
 
                 expect(() => new Context({factory: {lazyFunctionEvaluation: true}})
                     .provide(Building, 'home', () => null as any as Building)
@@ -2238,7 +2237,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject('home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -2414,7 +2413,7 @@ describe('Context', () => {
 
             it('fail WHEN no bean definition the tree has been provided', () => {
                 expect(() => new Context().inject(BUILDING, 'home')).toThrowMatching(thrown =>
-                    thrown instanceof Error && Context.ERR_MISSING_TOKEN === thrown.name);
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
         });
 
@@ -2681,12 +2680,24 @@ describe('Context', () => {
             expect(gravityFactorySpy).toHaveBeenCalledOnceWith(context);
 
             gravityFactorySpy = createSpy('gravityFactorySpy').and.returnValue(9.807);
-            const parent = new Context({factory:{lazyFunctionEvaluation: true}})
+            const parent = new Context({factory: {lazyFunctionEvaluation: true}})
                 .provide('gravity', gravityFactorySpy);
             new Context(parent).inject('gravity');
             expect(gravityFactorySpy.calls.count()).toBe(1);
             expect(gravityFactorySpy.calls.first().args[0]).toBe(parent);
             expect(gravityFactorySpy.calls.first().args.length).toBe(1);
+        });
+
+        it('inject resolve bean definition (both bean and factory) one context level at a time', () => {
+            expect(new Context({
+                        factory: {
+                            lazyFunctionEvaluation: true,
+                        },
+                    },
+                    new Context().provide('not-so-random', () => 'Oh') // Eager parent
+                ).provide('not-so-random', () => 'WoW') // Lazy child
+                    .inject('not-so-random') // Should resolve to child bean definition
+            ).toBe('WoW');
         });
     });
 });
