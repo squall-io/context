@@ -409,7 +409,7 @@ We follow best practices for Open-Source Software contributions, including:
 
 Here is the plan:
 
-+ [ ] Context.inject(notProvidedClassWithNoArgConstructor)
++ [x] Context.inject(notProvidedClassWithNoArgConstructor)
 + [ ] Binding contexts to injected bean
 + [ ] Context.from(beanObject)
 + [ ] Conditional beans
