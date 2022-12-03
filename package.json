@@ -20,7 +20,7 @@
     "build-umd": "yarpm run build-prefix --out-dir dist/umd --plugins '@babel/plugin-transform-modules-umd' src && yarpm run declare-umd",
     "build-es2015": "yarpm run build-prefix --out-dir dist/es2015 src && yarpm run declare-es2015",
     "build-prefix": "babel --minified --source-maps --delete-dir-on-start --extensions '.ts'",
-    "build": "yarpm run lint && yarpm run build-commonjs && yarpm run build-systemjs && yarpm run build-amd && yarpm run build-umd && yarpm run build-es2015 && yarpm run declare",
+    "build": "yarpm run lint && yarpm test && yarpm run build-commonjs && yarpm run build-systemjs && yarpm run build-amd && yarpm run build-umd && yarpm run build-es2015 && yarpm run declare",
     "declare-commonjs": "yarpm run declare-prefix --outDir dist/commonjs",
     "declare-systemjs": "yarpm run declare-prefix --outDir dist/systemjs",
     "declare-amd": "yarpm run declare-prefix --outDir dist/amd",
