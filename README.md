@@ -147,7 +147,9 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 + **Factory**: A JavaScript function, that accepts a context as a parameter and returns a bean of generic type.
   ```typescript
   namespace Context { 
-    export type Factory<T> = { (context: Context, token: Context.Token<T>, ...qualifiers: string[]): T };
+    export type Factory<T> = {
+        (context: Context, token: Context.Token<T>, ...qualifiers: string[]): T;
+    };
     // ...
   }
   ```

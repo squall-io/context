@@ -268,15 +268,29 @@ export namespace Context {
     export type BeanDefinition<T extends Token<any>> = T extends TokenSymbol<infer I> ? I | Factory<I>
         : T extends Constructor<infer I> ? I | Factory<I>
             : T extends string ? Factory<unknown>
-                : never; // NOTE: (unknown | whatever) results in unknown
-    export type Value<T extends Token<any>> = T extends Token<infer I> ? I : never;
+                : never;
+
+    export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
+        :T extends Constructor<infer I> ? I
+            : T extends string ? unknown
+                : never;
+
     export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
-    export type Constructor<T> = { new(...parameters: any[]): T };
+
+    export type Constructor<T> = {
+        new(...parameters: any[]): T
+    };
+
     export type TokenSymbol<T> = symbol & Record<never, T>;
-    export type Factory<T> = { (context: Context, token: Token<T>, ...qualifiers: string[]): T };
+
+    export type Factory<T> = {
+        (context: Context, token: Token<T>, ...qualifiers: string[]): T;
+    };
+
     export type DeepPartial<T> = T extends (null | undefined | boolean | number | string) ? T : {
         [K in keyof T]?: DeepPartial<T[K]>;
     };
+
     export type InjectOptions = {
         forceEvaluation?: boolean;
         qualifier?: string;
