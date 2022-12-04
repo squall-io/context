@@ -127,6 +127,14 @@ export class Context {
             }
 
             return value;
+        } else if ('function' === typeof token && 0 === token.length) {
+            const value = Reflect.construct(token, []);
+
+            this.#dependencies
+                .computeIfNotExists(token, () => new Context.FlexibleMap())
+                ?.set(qualifier, value);
+
+            return value;
         } else {
             const suffix = Context.#DEFAULT_QUALIFIER === qualifier
                 ? '' : Context.#format(' Qualifier<{0}>', qualifier);
@@ -271,7 +279,7 @@ export namespace Context {
                 : never;
 
     export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
-        :T extends Constructor<infer I> ? I
+        : T extends Constructor<infer I> ? I
             : T extends string ? unknown
                 : never;
 

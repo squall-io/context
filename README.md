@@ -264,6 +264,13 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 > stops as soon as it finds a match: i.e. a bean or bean definition mapped to the given token and eventually, the given
 > qualifier.
 
+> When injecting a no-args constructor (i.e. `0 === constructor.length`), if that class is not [yet] a token in that
+> context, will result in that context registering a definition of it under that class, under the given qualifier (or
+> the default qualifier). An instance is created immediately without parameters.
+> 
+> All the other rules apply eagerly since things couldn't be later: validation, caching, calls without qualifier bean
+> resolution.
+
 + `context.inject(token: string): unknown`
   <br/>
   Retrieve the bean resolved from the bean definition mapped to the given `token`, in this context or its ancestors.
@@ -411,7 +418,6 @@ We follow best practices for Open-Source Software contributions, including:
 
 Here is the plan:
 
-+ [x] Context.inject(notProvidedClassWithNoArgConstructor)
 + [ ] Binding contexts to injected bean
 + [ ] Context.from(beanObject)
 + [ ] Conditional beans

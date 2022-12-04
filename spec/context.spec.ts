@@ -1685,11 +1685,12 @@ describe('Context', () => {
 
         describe('(token: Class, qualifier: string)', () => {
             class Building {
-                number?: number;
+                constructor(public number: number) {
+                }
             }
 
             it('return provided value', () => {
-                const expected = new Building();
+                const expected = new Building(0);
                 expect(new Context()
                     .provide(Building, () => expected)
                     .inject(Building)
@@ -1697,10 +1698,10 @@ describe('Context', () => {
             });
 
             it('return default qualified value', () => {
-                const expected = new Building();
+                const expected = new Building(1);
                 expect(new Context()
                     .provide(Building, () => expected)
-                    .provide(Building, 'home', () => new Building())
+                    .provide(Building, 'home', () => new Building(2))
                     .inject(Building)
                 ).toBe(expected);
                 expect(new Context()
@@ -1710,7 +1711,7 @@ describe('Context', () => {
             });
 
             it('return default qualified value from ancestor WHEN not possible at descendant level', () => {
-                const expected = new Building();
+                const expected = new Building(3);
                 expect(new Context(
                     new Context()
                         .provide(Building, 'home', () => expected))
@@ -1719,9 +1720,9 @@ describe('Context', () => {
             });
 
             it('return cached factory-evaluated value', () => {
-                const expected = new Building();
+                const expected = new Building(4);
                 const factory = createSpy('stringFactorySpy')
-                    .and.returnValues(expected, new Building());
+                    .and.returnValues(expected, new Building(5));
                 const context = new Context().provide(Building, 'home', factory);
 
                 expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
@@ -1730,9 +1731,9 @@ describe('Context', () => {
                 expect(context.inject(Building, 'home')).toBe(expected);
                 expect(factory).toHaveBeenCalledOnceWith(context, Building, 'home');
 
-                const otherExpected = new Building();
+                const otherExpected = new Building(6);
                 const otherFactory = createSpy('stringFactorySpy')
-                    .and.returnValues(otherExpected, new Building());
+                    .and.returnValues(otherExpected, new Building(7));
                 const otherContext = new Context().provide(Building, 'home', otherFactory);
 
                 expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Building, 'home');
@@ -1741,9 +1742,9 @@ describe('Context', () => {
                 expect(otherContext.inject(Building, 'home')).toBe(otherExpected);
                 expect(otherFactory).toHaveBeenCalledOnceWith(otherContext, Building, 'home');
 
-                const anotherExpected = new Building();
+                const anotherExpected = new Building(8);
                 const anotherFactory = createSpy('stringFactorySpy')
-                    .and.returnValues(anotherExpected, new Building());
+                    .and.returnValues(anotherExpected, new Building(9));
                 const anotherContext = new Context({
                     factory: {
                         lazyFunctionEvaluation: true,
@@ -1758,7 +1759,7 @@ describe('Context', () => {
             });
 
             it('evaluate factory with invocation context', () => {
-                const expected = new Building();
+                const expected = new Building(10);
                 const factory = createSpy('stringFactorySpy').and.returnValues(expected);
                 const context = new Context(new Context()
                     .provide(Building, 'home', factory));
@@ -1768,7 +1769,7 @@ describe('Context', () => {
             });
 
             it('caches factory-evaluated value at bean definition context', () => {
-                const expected = new Building();
+                const expected = new Building(11);
                 const factory = createSpy('stringFactorySpy').and.returnValues(expected);
                 const parent = new Context().provide(Building, 'home', factory);
                 const context = new Context(parent);
@@ -1822,11 +1823,11 @@ describe('Context', () => {
 
         describe('(token: Class, injectOptions)', () => {
             class Building {
-                number?: number;
+                constructor(public number: number) {}
             }
 
             it('resolve bean', async () => {
-                const expected = new Building();
+                const expected = new Building(0);
                 expect(new Context()
                     .provide(Building, expected)
                     .inject(Building, {})
@@ -1897,7 +1898,7 @@ describe('Context', () => {
             });
 
             it('revaluate factory and validate value WHEN injectOptions.forceEvaluation === true, without caching the result', async () => {
-                const [ZERO, ONE, TWO] = [new Building(), new Building(), new Building()];
+                const [ZERO, ONE, TWO] = [new Building(1), new Building(2), new Building(3)];
                 let factory = createSpy('stringFactorySpy').and.returnValues(ZERO, ONE, TWO);
                 let context = new Context().provide(Building, factory);
                 expect(factory).toHaveBeenCalledOnceWith(context, Building);
@@ -2660,6 +2661,50 @@ describe('Context', () => {
                     qualifier: '1-step',
                 })).toBeResolvedTo(ZERO);
                 expect(factory).toHaveBeenCalledTimes(4);
+            });
+        });
+
+        describe('(noBeanDefinitionNoArgumentConstructor, qualifier?)', () => {
+            let Product: { new(): { brand?: string | undefined } };
+            let constructorSpy: jasmine.Spy<jasmine.Func>;
+            let context: Context;
+            beforeEach(() => {
+                context = new Context();
+                Product = class ProductType {
+                    constructor(public brand: string | undefined = undefined) {
+                        constructorSpy(...arguments);
+                    }
+                };
+                constructorSpy = createSpy('constructorSpy');
+            });
+
+            it('throws error when the constructor require at least one argument', () => {
+                expect(() => context.inject(class Product {
+                    constructor(public brand: string) {
+                    }
+                })).toThrowMatching(thrown =>
+                    thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name)
+            });
+
+            it('create an instance of that class, caches it and return it', () => {
+                const injected = context.inject(Product);
+                expect(injected).toBeInstanceOf(Product);
+                expect(context.inject(Product)).toBe(injected);
+                expect(constructorSpy).toHaveBeenCalledOnceWith();
+            });
+
+            it('create an instance of that class, caches it under the given qualifier and return it', () => {
+                const injected = context.inject(Product, 'useful');
+                expect(injected).toBeInstanceOf(Product);
+                expect(context.inject(Product, 'useful')).toBe(injected);
+                expect(constructorSpy).toHaveBeenCalledOnceWith();
+            });
+
+            it('resolve default qualifier of only qualified bean', () => {
+                const injected = context.inject(Product, 'useful');
+                expect(injected).toBeInstanceOf(Product);
+                expect(context.inject(Product)).toBe(injected);
+                expect(constructorSpy).toHaveBeenCalledOnceWith();
             });
         });
     });
