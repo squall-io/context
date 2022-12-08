@@ -1,5 +1,7 @@
 import createSpy = jasmine.createSpy;
 
+const P = Promise;
+
 describe('Promise', () => {
     describe('.new( resolver )', () => {
         it('resolves when resolve callback is called first', async () => {
@@ -7,7 +9,7 @@ describe('Promise', () => {
             const rejectSpy = createSpy('rejectSpy', reason => rej(reason)).and.callThrough();
             let res: (value: unknown) => void;
             let rej: (value: any) => void;
-            const promise = new Promise((resolve, reject) => {
+            const promise = new P((resolve, reject) => {
                 [res, rej] = [resolve, reject];
 
                 resolveSpy(1);
@@ -24,7 +26,7 @@ describe('Promise', () => {
             const rejectSpy = createSpy('rejectSpy', reason => rej(reason)).and.callThrough();
             let res: (value: unknown) => void;
             let rej: (value: any) => void;
-            const promise = new Promise((resolve, reject) => {
+            const promise = new P((resolve, reject) => {
                 [res, rej] = [resolve, reject];
 
                 rejectSpy(-1);
@@ -38,21 +40,21 @@ describe('Promise', () => {
 
         it('throws is resolver is not a function', async () => {
             // @ts-ignore
-            expect(() => new Promise()).toThrowError(
+            expect(() => new P()).toThrowError(
                 TypeError, 'Promise resolver undefined is not a function');
             // @ts-ignore
-            expect(() => new Promise(null)).toThrowError(
+            expect(() => new P(null)).toThrowError(
                 TypeError, 'Promise resolver null is not a function');
             // @ts-ignore
-            expect(() => new Promise(undefined)).toThrowError(
+            expect(() => new P(undefined)).toThrowError(
                 TypeError, 'Promise resolver undefined is not a function');
             // @ts-ignore
-            expect(() => new Promise([])).toThrowError(
+            expect(() => new P([])).toThrowError(
                 TypeError, 'Promise resolver [object Array] is not a function');
         });
 
         it('returns a rejected promise if resolver throws an exception', async () => {
-            await expectAsync(new Promise(() => {
+            await expectAsync(new P(() => {
                 throw new Error('A.A');
             })).toBeRejectedWith(new Error('A.A'));
         });
@@ -60,18 +62,18 @@ describe('Promise', () => {
 
     describe('.any( [...promises] )', () => {
         it('resolves when any of the promises resolve', async () => {
-            const all = Promise.any([
-                new Promise<'0'>(resolve => resolve('0')),
-                Promise.reject(1),
+            const all = P.any([
+                new P<'0'>(resolve => resolve('0')),
+                P.reject(1),
             ]);
 
             await expectAsync(all).toBeResolvedTo('0');
         });
 
         it('reject when all of the promises reject with aggregate reason', async () => {
-            const all = Promise.any([
-                new Promise<never>((_resolve, reject) => reject('0')),
-                Promise.reject(1),
+            const all = P.any([
+                new P<never>((_resolve, reject) => reject('0')),
+                P.reject(1),
             ]);
 
             await expectAsync(all).toBeRejectedWith(
@@ -81,9 +83,9 @@ describe('Promise', () => {
 
     describe('.all( [...promises] )', () => {
         it('resolves when all promises resolve', async () => {
-            const all = Promise.all([
-                Promise.resolve('0' as const),
-                Promise.resolve(1 as const),
+            const all = P.all([
+                P.resolve('0' as const),
+                P.resolve(1 as const),
             ]);
 
             await expectAsync(all).toBeResolvedTo(['0', 1]);
@@ -100,13 +102,13 @@ describe('Promise', () => {
         });
 
         it('rejects when the any promise rejects, with the first rejection reason', async () => {
-            const all = Promise.all([
-                Promise.resolve('0'),
-                Promise.resolve(1 as const),
-                new Promise((_resolve, reject) => {
+            const all = P.all([
+                P.resolve('0'),
+                P.resolve(1 as const),
+                new P((_resolve, reject) => {
                     setTimeout(() => reject('2' as const));
                 }),
-                Promise.reject('3' as const),
+                P.reject('3' as const),
             ]);
 
             await expectAsync(all).toBeRejectedWith('3');
@@ -115,30 +117,30 @@ describe('Promise', () => {
 
     describe('.race( [...promises] )', () => {
         it('returns a promise that settles as the first promise to settle', async () => {
-            await expectAsync(Promise.race([
-                Promise.resolve(1),
-                Promise.reject(-1),
+            await expectAsync(P.race([
+                P.resolve(1),
+                P.reject(-1),
             ])).toBeResolvedTo(1);
-            await expectAsync(Promise.race([
-                Promise.reject(-1),
-                Promise.resolve(1),
+            await expectAsync(P.race([
+                P.reject(-1),
+                P.resolve(1),
             ])).toBeRejectedWith(-1);
         });
     });
 
     describe('.reject( reason )', () => {
         it('returns a rejected promise with the given reason', async () => {
-            await expectAsync(Promise.reject()).toBeRejectedWith(undefined);
-            await expectAsync(Promise.reject(-1)).toBeRejectedWith(-1);
+            await expectAsync(P.reject()).toBeRejectedWith(undefined);
+            await expectAsync(P.reject(-1)).toBeRejectedWith(-1);
         });
     });
 
     describe('.resolve( value )', () => {
         it('returns a resolved promise with the given value', async () => {
-            const resolvedVoid = Promise.resolve();
+            const resolvedVoid = P.resolve();
             await expectAsync(resolvedVoid).toBeResolvedTo(undefined);
             expect(resolvedVoid[Symbol.toStringTag]).toBe('Promise');
-            const resolvedOne = Promise.resolve(1);
+            const resolvedOne = P.resolve(1);
             await expectAsync(resolvedOne).toBeResolvedTo(1);
             expect(resolvedOne[Symbol.toStringTag]).toBe('Promise');
         });
@@ -146,11 +148,11 @@ describe('Promise', () => {
 
     describe('.allSettled( [...promises] )', () => {
         it('resolves when all promises settle', async () => {
-            const allSettled = Promise.allSettled([
+            const allSettled = P.allSettled([
                 -1,
-                Promise.resolve('0' as const),
-                Promise.resolve(1 as const),
-                Promise.reject('2' as const),
+                P.resolve('0' as const),
+                P.resolve(1 as const),
+                P.reject('2' as const),
             ]);
 
             expect(allSettled[Symbol.toStringTag]).toBe('Promise');
@@ -178,42 +180,42 @@ describe('Promise', () => {
     describe('promise.then( transform )', () => {
         it('should call given transform in the next tick of the event loop', async () => {
             const resolveSpy = createSpy('resolveSpy');
-            const next = Promise.resolve(1).then(resolveSpy);
+            const next = P.resolve(1).then(resolveSpy);
             expect(resolveSpy).not.toHaveBeenCalled();
             await next;
             expect(resolveSpy).toHaveBeenCalledOnceWith(1);
         });
 
         it('should return a resolved promise with returned value from the transform', async () => {
-            await expectAsync(Promise.resolve(1).then(() => 2)).toBeResolvedTo(2);
+            await expectAsync(P.resolve(1).then(() => 2)).toBeResolvedTo(2);
         });
 
         it('should return a promise that settles as the one returned by the transform', async () => {
-            await expectAsync(Promise.resolve(1)
-                .then(() => Promise.resolve(2))).toBeResolvedTo(2);
-            await expectAsync(Promise.resolve(1)
-                .then(() => Promise.reject(-2))).toBeRejectedWith(-2);
+            await expectAsync(P.resolve(1)
+                .then(() => P.resolve(2))).toBeResolvedTo(2);
+            await expectAsync(P.resolve(1)
+                .then(() => P.reject(-2))).toBeRejectedWith(-2);
         });
     });
 
     describe('promise.catch( transform )', () => {
         it('should call given transform in the next tick of the event loop', async () => {
             const rejectSpy = createSpy('rejectSpy');
-            const next = Promise.reject(-1).catch(rejectSpy);
+            const next = P.reject(-1).catch(rejectSpy);
             expect(rejectSpy).not.toHaveBeenCalled();
             await next;
             expect(rejectSpy).toHaveBeenCalledOnceWith(-1);
         });
 
         it('should return a resolved promise with returned value from the transform', async () => {
-            await expectAsync(Promise.reject(-1).catch(() => 2)).toBeResolvedTo(2);
+            await expectAsync(P.reject(-1).catch(() => 2)).toBeResolvedTo(2);
         });
 
         it('should return a promise that settles as the one returned by the transform', async () => {
-            await expectAsync(Promise.reject(-1)
-                .catch(() => Promise.resolve(2))).toBeResolvedTo(2);
-            await expectAsync(Promise.reject(-1)
-                .catch(() => Promise.reject(-2))).toBeRejectedWith(-2);
+            await expectAsync(P.reject(-1)
+                .catch(() => P.resolve(2))).toBeResolvedTo(2);
+            await expectAsync(P.reject(-1)
+                .catch(() => P.reject(-2))).toBeRejectedWith(-2);
         });
     });
 
@@ -223,14 +225,14 @@ describe('Promise', () => {
         beforeEach(() => getFinallySpy());
 
         it('gets called without parameters, when the promise resolves', async () => {
-            Promise.resolve(1).finally(finallySpy);
+            P.resolve(1).finally(finallySpy);
             expect(finallySpy).not.toHaveBeenCalled();
-            await Promise.resolve(1).finally(getFinallySpy());
+            await P.resolve(1).finally(getFinallySpy());
             expect(finallySpy).toHaveBeenCalledOnceWith();
         });
 
         it('gets called without parameters, when the promise rejects', async () => {
-            const rejected = Promise.reject(-1).finally(finallySpy);
+            const rejected = P.reject(-1).finally(finallySpy);
             expect(finallySpy).not.toHaveBeenCalled();
             await expectAsync(rejected).toBeRejectedWith(-1);
             expect(finallySpy).toHaveBeenCalledOnceWith();
