@@ -38,7 +38,7 @@ describe('Promise', () => {
             await expectAsync(promise).toBeRejectedWith(-1);
         });
 
-        it('throws is resolver is not a function', async () => {
+        it('throws if resolver is not a function', async () => {
             // @ts-ignore
             expect(() => new P()).toThrowError(
                 TypeError, 'Promise resolver undefined is not a function');
