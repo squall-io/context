@@ -97,13 +97,6 @@ describe('Promise', () => {
 
             const resolved = await all;
             expect(resolved).toBeInstanceOf(Array);
-
-            const lazyIterator = resolved[Symbol.iterator]();
-            expect(lazyIterator).not.toBeNull();
-            expect(lazyIterator).not.toBeUndefined();
-            expect(lazyIterator.next()).toEqual({value: '0', done: false});
-            expect(lazyIterator.next()).toEqual({value: 1, done: false});
-            expect(lazyIterator.next()).toEqual({value: undefined, done: true});
         });
 
         it('rejects when the any promise rejects, with the first rejection reason', async () => {
@@ -167,15 +160,6 @@ describe('Promise', () => {
 
             const resolved = await allSettled;
             expect(resolved).toBeInstanceOf(Array);
-
-            const lazyIterator = resolved[Symbol.iterator]();
-            expect(lazyIterator).not.toBeNull();
-            expect(lazyIterator).not.toBeUndefined();
-            expect(lazyIterator.next()).toEqual({value: {status: 'fulfilled', value: -1}, done: false});
-            expect(lazyIterator.next()).toEqual({value: {status: 'fulfilled', value: '0'}, done: false});
-            expect(lazyIterator.next()).toEqual({value: {status: 'fulfilled', value: 1}, done: false});
-            expect(lazyIterator.next()).toEqual({value: {status: 'rejected', reason: '2'}, done: false});
-            expect(lazyIterator.next()).toEqual({value: undefined, done: true});
         });
     });
 
