@@ -144,10 +144,8 @@ describe('Promise', () => {
         it('returns a resolved promise with the given value', async () => {
             const resolvedVoid = P.resolve();
             await expectAsync(resolvedVoid).toBeResolvedTo(undefined);
-            expect(resolvedVoid[Symbol.toStringTag]).toBe('Promise');
             const resolvedOne = P.resolve(1);
             await expectAsync(resolvedOne).toBeResolvedTo(1);
-            expect(resolvedOne[Symbol.toStringTag]).toBe('Promise');
         });
     });
 
@@ -158,9 +156,8 @@ describe('Promise', () => {
                 P.resolve('0' as const),
                 P.resolve(1 as const),
                 P.reject('2' as const),
-            ]);
+            ] as const);
 
-            expect(allSettled[Symbol.toStringTag]).toBe('Promise');
             await expectAsync(allSettled).toBeResolvedTo([
                 {status: 'fulfilled', value: -1},
                 {status: 'fulfilled', value: '0'},
@@ -241,6 +238,14 @@ describe('Promise', () => {
             expect(finallySpy).not.toHaveBeenCalled();
             await expectAsync(rejected).toBeRejectedWith(-1);
             expect(finallySpy).toHaveBeenCalledOnceWith();
+        });
+    });
+
+    describe('get [Symbol.toStringTag]', () => {
+        it('returns the Promise constructor name (its classname)', () => {
+            expect(new Promise(() => 0)[Symbol.toStringTag]).toBe(P.name);
+            expect(Promise.resolve('1')[Symbol.toStringTag]).toBe(P.name);
+            expect(Promise.reject(-1)[Symbol.toStringTag]).toBe(P.name);
         });
     });
 });
