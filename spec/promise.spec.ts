@@ -39,16 +39,21 @@ describe('Promise', () => {
         });
 
         it('throws if resolver is not a function', async () => {
-            // @ts-ignore
+            // @ts-ignore: TS2554: Expected 1 arguments, but got 0.
             expect(() => new P()).toThrowError(
                 TypeError, 'Promise resolver undefined is not a function');
-            // @ts-ignore
+            // @ts-ignore: TS2345: Argument of type 'null' is not assignable to parameter of type
+            //             '(resolve: Resolve , reject: Reject) => void'.
             expect(() => new P(null)).toThrowError(
                 TypeError, 'Promise resolver null is not a function');
-            // @ts-ignore
+            // @ts-ignore: TS2345: Argument of type 'undefined' is not assignable to parameter of type
+            //             '(resolve: Resolve , reject: Reject) => void'.
             expect(() => new P(undefined)).toThrowError(
                 TypeError, 'Promise resolver undefined is not a function');
-            // @ts-ignore
+            // @ts-ignore: TS2345: Argument of type 'never[]' is not assignable to parameter of type
+            //             '(resolve: Resolve<unknown>, reject: Reject) => void'.
+            //                  Type 'never[]' provides no match for the signature
+            //                  '(resolve: Resolve<unknown>, reject: Reject): void'.
             expect(() => new P([])).toThrowError(
                 TypeError, 'Promise resolver [object Array] is not a function');
         });
