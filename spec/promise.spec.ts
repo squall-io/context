@@ -232,6 +232,41 @@ describe('Promise', () => {
             expect(P.reject(-1)[Symbol.toStringTag]).toBe(P.name);
         });
     });
+
+    describe('get [Symbol.species]', () => {
+        it('then, catch and finally honour @@species', () => {
+            expect(P.reject(-1).finally(() => 0)).toBeInstanceOf(P);
+            expect(P.reject(-1).catch(() => 0)).toBeInstanceOf(P);
+            expect(P.resolve(1).then(() => 0)).toBeInstanceOf(P);
+
+            class GeorgeHotz<T> extends P<T> {
+            }
+
+            expect(GeorgeHotz.reject(-1).finally(() => 0)).toBeInstanceOf(GeorgeHotz);
+            expect(GeorgeHotz.reject(-1).catch(() => 0)).toBeInstanceOf(GeorgeHotz);
+            expect(GeorgeHotz.resolve(1).then(() => 0)).toBeInstanceOf(GeorgeHotz);
+
+            class ViewCount<T> extends P<T> {
+                static get [Symbol.species]() {
+                    return [null, undefined][Math.round(Math.random())] as any;
+                }
+            }
+
+            expect(ViewCount.reject(-1).finally(() => 0)).toBeInstanceOf(P);
+            expect(ViewCount.reject(-1).catch(() => 0)).toBeInstanceOf(P);
+            expect(ViewCount.resolve(1).then(() => 0)).toBeInstanceOf(P);
+
+            class PublicViewCount<T> extends P<T> {
+                static get [Symbol.species]() {
+                    return ViewCount;
+                }
+            }
+
+            expect(PublicViewCount.reject(-1).finally(() => 0)).toBeInstanceOf(ViewCount);
+            expect(PublicViewCount.reject(-1).catch(() => 0)).toBeInstanceOf(ViewCount);
+            expect(PublicViewCount.resolve(1).then(() => 0)).toBeInstanceOf(ViewCount);
+        });
+    });
 });
 
 declare function setTimeout(code: (...args: any[]) => void, delayMilliseconds?: number, ...parameters: any[]): number;
