@@ -227,9 +227,9 @@ describe('Promise', () => {
 
     describe('get [Symbol.toStringTag]', () => {
         it('returns the Promise constructor name (its classname)', () => {
-            expect(new Promise(() => 0)[Symbol.toStringTag]).toBe(P.name);
-            expect(Promise.resolve('1')[Symbol.toStringTag]).toBe(P.name);
-            expect(Promise.reject(-1)[Symbol.toStringTag]).toBe(P.name);
+            expect(new P(() => 0)[Symbol.toStringTag]).toBe(P.name);
+            expect(P.resolve('1')[Symbol.toStringTag]).toBe(P.name);
+            expect(P.reject(-1)[Symbol.toStringTag]).toBe(P.name);
         });
     });
 });
