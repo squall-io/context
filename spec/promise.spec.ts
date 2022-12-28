@@ -69,7 +69,7 @@ describe('Promise', () => {
         it('resolves when any of the promises resolve', async () => {
             const all = P.any([
                 new P<'0'>(resolve => resolve('0')),
-                P.reject(1),
+                P.reject(new Error('1')),
             ]);
 
             await expectAsync(all).toBeResolvedTo('0');
@@ -78,7 +78,7 @@ describe('Promise', () => {
         it('reject when all of the promises reject with aggregate reason', async () => {
             const all = P.any([
                 new P<never>((_resolve, reject) => reject('0')),
-                P.reject(1),
+                P.reject(new Error('1')),
             ]);
 
             await expectAsync(all).toBeRejectedWith(
@@ -106,10 +106,10 @@ describe('Promise', () => {
                 new P((_resolve, reject) => {
                     setTimeout(() => reject('2' as const));
                 }),
-                P.reject('3' as const),
+                P.reject(new Error('3' as const)),
             ]);
 
-            await expectAsync(all).toBeRejectedWith('3');
+            await expectAsync(all).toBeRejectedWithError('3');
         });
     });
 
@@ -117,19 +117,19 @@ describe('Promise', () => {
         it('returns a promise that settles as the first promise to settle', async () => {
             await expectAsync(P.race([
                 P.resolve(1),
-                P.reject(-1),
+                P.reject(new Error('-1')),
             ])).toBeResolvedTo(1);
             await expectAsync(P.race([
-                P.reject(-1),
+                P.reject(new Error('-1')),
                 P.resolve(1),
-            ])).toBeRejectedWith(-1);
+            ])).toBeRejectedWithError('-1');
         });
     });
 
     describe('.reject( reason )', () => {
         it('returns a rejected promise with the given reason', async () => {
             await expectAsync(P.reject()).toBeRejectedWith(undefined);
-            await expectAsync(P.reject(-1)).toBeRejectedWith(-1);
+            await expectAsync(P.reject(new Error('-1'))).toBeRejectedWithError('-1');
         });
     });
 
@@ -148,14 +148,14 @@ describe('Promise', () => {
                 -1,
                 P.resolve('0' as const),
                 P.resolve(1 as const),
-                P.reject('2' as const),
+                P.reject(new Error('2' as const)),
             ] as const);
 
             await expectAsync(allSettled).toBeResolvedTo([
                 {status: 'fulfilled', value: -1},
                 {status: 'fulfilled', value: '0'},
                 {status: 'fulfilled', value: 1},
-                {status: 'rejected', reason: '2'},
+                {status: 'rejected', reason: new Error('2')},
             ]);
 
             const resolved = await allSettled;
@@ -180,28 +180,28 @@ describe('Promise', () => {
             await expectAsync(P.resolve(1)
                 .then(() => P.resolve(2))).toBeResolvedTo(2);
             await expectAsync(P.resolve(1)
-                .then(() => P.reject(-2))).toBeRejectedWith(-2);
+                .then(() => P.reject(new Error('-2')))).toBeRejectedWithError('-2');
         });
     });
 
     describe('promise.catch( transform )', () => {
         it('should call given transform in the next tick of the event loop', async () => {
             const rejectSpy = createSpy('rejectSpy');
-            const next = P.reject(-1).catch(rejectSpy);
+            const next = P.reject(new Error('-1')).catch(rejectSpy);
             expect(rejectSpy).not.toHaveBeenCalled();
             await next;
-            expect(rejectSpy).toHaveBeenCalledOnceWith(-1);
+            expect(rejectSpy).toHaveBeenCalledOnceWith(new Error('-1'));
         });
 
         it('should return a resolved promise with returned value from the transform', async () => {
-            await expectAsync(P.reject(-1).catch(() => 2)).toBeResolvedTo(2);
+            await expectAsync(P.reject(new Error('-1')).catch(() => 2)).toBeResolvedTo(2);
         });
 
         it('should return a promise that settles as the one returned by the transform', async () => {
-            await expectAsync(P.reject(-1)
+            await expectAsync(P.reject(new Error('-1'))
                 .catch(() => P.resolve(2))).toBeResolvedTo(2);
-            await expectAsync(P.reject(-1)
-                .catch(() => P.reject(-2))).toBeRejectedWith(-2);
+            await expectAsync(P.reject(new Error('-1'))
+                .catch(() => P.reject(new Error('-2')))).toBeRejectedWithError('-2');
         });
     });
 
@@ -218,9 +218,9 @@ describe('Promise', () => {
         });
 
         it('gets called without parameters, when the promise rejects', async () => {
-            const rejected = P.reject(-1).finally(finallySpy);
+            const rejected = P.reject(new Error('-1')).finally(finallySpy);
             expect(finallySpy).not.toHaveBeenCalled();
-            await expectAsync(rejected).toBeRejectedWith(-1);
+            await expectAsync(rejected).toBeRejectedWithError('-1');
             expect(finallySpy).toHaveBeenCalledOnceWith();
         });
     });
@@ -229,21 +229,21 @@ describe('Promise', () => {
         it('returns the Promise constructor name (its classname)', () => {
             expect(new P(() => 0)[Symbol.toStringTag]).toBe(P.name);
             expect(P.resolve('1')[Symbol.toStringTag]).toBe(P.name);
-            expect(P.reject(-1)[Symbol.toStringTag]).toBe(P.name);
+            expect(P.reject(new Error('-1'))[Symbol.toStringTag]).toBe(P.name);
         });
     });
 
     describe('get [Symbol.species]', () => {
         it('then, catch and finally honour @@species', () => {
-            expect(P.reject(-1).finally(() => 0)).toBeInstanceOf(P);
-            expect(P.reject(-1).catch(() => 0)).toBeInstanceOf(P);
+            expect(P.reject(new Error('-1')).finally(() => 0)).toBeInstanceOf(P);
+            expect(P.reject(new Error('-1')).catch(() => 0)).toBeInstanceOf(P);
             expect(P.resolve(1).then(() => 0)).toBeInstanceOf(P);
 
             class GeorgeHotz<T> extends P<T> {
             }
 
-            expect(GeorgeHotz.reject(-1).finally(() => 0)).toBeInstanceOf(GeorgeHotz);
-            expect(GeorgeHotz.reject(-1).catch(() => 0)).toBeInstanceOf(GeorgeHotz);
+            expect(GeorgeHotz.reject(new Error('-1')).finally(() => 0)).toBeInstanceOf(GeorgeHotz);
+            expect(GeorgeHotz.reject(new Error('-1')).catch(() => 0)).toBeInstanceOf(GeorgeHotz);
             expect(GeorgeHotz.resolve(1).then(() => 0)).toBeInstanceOf(GeorgeHotz);
 
             class ViewCount<T> extends P<T> {
@@ -252,9 +252,9 @@ describe('Promise', () => {
                 }
             }
 
-            expect(ViewCount.reject(-1).finally(() => 0)).toBeInstanceOf(P);
-            expect(ViewCount.reject(-1).catch(() => 0)).toBeInstanceOf(P);
-            expect(ViewCount.resolve(1).then(() => 0)).toBeInstanceOf(P);
+            expect(ViewCount.reject(new Error('-1')).finally(() => 0)).toBeInstanceOf(Promise);
+            expect(ViewCount.reject(new Error('-1')).catch(() => 0)).toBeInstanceOf(Promise);
+            expect(ViewCount.resolve(1).then(() => 0)).toBeInstanceOf(Promise);
 
             class PublicViewCount<T> extends P<T> {
                 static get [Symbol.species]() {
@@ -262,8 +262,8 @@ describe('Promise', () => {
                 }
             }
 
-            expect(PublicViewCount.reject(-1).finally(() => 0)).toBeInstanceOf(ViewCount);
-            expect(PublicViewCount.reject(-1).catch(() => 0)).toBeInstanceOf(ViewCount);
+            expect(PublicViewCount.reject(new Error('-1')).finally(() => 0)).toBeInstanceOf(ViewCount);
+            expect(PublicViewCount.reject(new Error('-1')).catch(() => 0)).toBeInstanceOf(ViewCount);
             expect(PublicViewCount.resolve(1).then(() => 0)).toBeInstanceOf(ViewCount);
         });
     });
