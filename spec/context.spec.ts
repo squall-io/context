@@ -1,6 +1,6 @@
 // noinspection DuplicatedCode
 
-import {Context} from '@squall.io/context';
+import {Context} from '../src/context';
 import createSpy = jasmine.createSpy;
 
 describe('Context', () => {
