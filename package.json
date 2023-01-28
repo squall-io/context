@@ -15,7 +15,7 @@
   },
   "scripts": {
     "test": "jest",
-    "dev:test": "nodemon --ext js,ts,json,lock --watch jest.config.js --watch tsconfig.json --watch src/ --watch spec/ --exec 'yarpm run test'",
+    "dev:test": "nodemon --ext js,ts,json,lock --watch jest.config.js --watch tsconfig.json --watch src/ --watch spec/ --watch spec/.jest/ --exec 'yarpm run test'",
     "nodemon": "nodemon",
     "jest": "jest",
     "tsc": "tsc"
