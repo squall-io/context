@@ -11,6 +11,8 @@
     "outDir": "./dist",
     "downlevelIteration": true,
     "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "node",
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitAny": true,
@@ -31,6 +33,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "./src"
+    "./src",
+    "./spec"
   ]
 }
