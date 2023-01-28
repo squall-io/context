@@ -5,7 +5,7 @@ module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   coverageDirectory: '.coverage',
-  setupFiles: [
+  setupFilesAfterEnv: [
     './spec/.jest/setup',
   ],
   reporters: [
