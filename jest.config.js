@@ -9,7 +9,8 @@ module.exports = {
     './spec/.jest/setup',
   ],
   reporters: [
-      './spec/.jest/reporter',
+    'default',
+    // './spec/.jest/reporter',
   ],
   detectOpenHandles: true,
 };
