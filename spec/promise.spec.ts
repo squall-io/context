@@ -282,7 +282,7 @@ describe('Promise', () => {
 
         it('do not execute callback as soon as the promise is rejected', async () => {
             const onSettled = fn();
-            const promise = new TestedPromise((_,rej) => rej(-1));
+            const promise = new TestedPromise((_, rej) => rej(-1));
             cached(promise.finally(onSettled));
             cached.silenced();
 
@@ -291,7 +291,7 @@ describe('Promise', () => {
 
         it('execute callback once asynchronously after the promise is rejected', async () => {
             const onSettled = fn();
-            const promise = new TestedPromise((_,rej) => rej(-1));
+            const promise = new TestedPromise((_, rej) => rej(-1));
             cached(promise.finally(onSettled));
             cached.silenced();
 
@@ -301,7 +301,7 @@ describe('Promise', () => {
 
         it('execute callback without parameters after the promise is resolved', async () => {
             const onSettled = fn();
-            const promise = new TestedPromise((_,rej) => rej(-1));
+            const promise = new TestedPromise((_, rej) => rej(-1));
             cached(promise.finally(onSettled));
             cached.silenced();
 
@@ -317,11 +317,11 @@ describe('Promise', () => {
             await expect(new TestedPromise(res => res(1)).finally(undefined))
                 .resolves.toBe(1);
 
-            await expect(new TestedPromise((_,rej) => rej(-1)).finally())
+            await expect(new TestedPromise((_, rej) => rej(-1)).finally())
                 .rejects.toBe(-1);
-            await expect(new TestedPromise((_,rej) => rej(-1)).finally(null))
+            await expect(new TestedPromise((_, rej) => rej(-1)).finally(null))
                 .rejects.toBe(-1);
-            await expect(new TestedPromise((_,rej) => rej(-1)).finally(undefined))
+            await expect(new TestedPromise((_, rej) => rej(-1)).finally(undefined))
                 .rejects.toBe(-1);
         });
 
@@ -335,6 +335,7 @@ describe('Promise', () => {
         it('get the class name of the promise class', () => {
             class ExtendedPromise<T> extends TestedPromise<T> {
             }
+
             expect(new TestedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
             expect(new ExtendedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
         });
@@ -345,13 +346,65 @@ describe('Promise', () => {
                     return ExtendedPromise.name;
                 }
             }
+
             expect(new TestedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
             expect(new ExtendedPromise(fn())[Symbol.toStringTag]).toBe(ExtendedPromise.name);
         });
     });
 
     describe('::[@@species]', () => {
-        it('noop', () => {
+        class NewPromise<T> extends TestedPromise<T> {
+        }
+
+        class UnstablePromise<T> extends TestedPromise<T> {
+            static get [Symbol.species]() {
+                return NewPromise;
+            }
+        }
+
+        class AwkwardPromise<T> extends TestedPromise<T> {
+            static get [Symbol.species]() {
+                return undefined as any;
+            }
+        }
+
+        class BackwardPromise<T> extends TestedPromise<T> {
+            static get [Symbol.species]() {
+                return undefined as any;
+            }
+        }
+
+        it('is honoured by .then', () => {
+            expect(new UnstablePromise(res => res(1)).then())
+                .toBeInstanceOf(NewPromise);
+            expect(new AwkwardPromise(res => res(1)).then())
+                .toBeInstanceOf(TestedPromise);
+            expect(new BackwardPromise(res => res(1)).then())
+                .toBeInstanceOf(TestedPromise);
+        });
+
+        it('is honoured by .catch', () => {
+            expect(cached(new UnstablePromise((_,rej) => rej(-1)).catch()))
+                .toBeInstanceOf(NewPromise);
+            cached.silenced();
+            expect(cached(new AwkwardPromise((_,rej) => rej(-1)).catch()))
+                .toBeInstanceOf(TestedPromise);
+            cached.silenced();
+            expect(cached(new BackwardPromise((_,rej) => rej(-1)).catch()))
+                .toBeInstanceOf(TestedPromise);
+            cached.silenced();
+        });
+
+        it('is honoured by .finally', () => {
+            expect(cached(new UnstablePromise((_,rej) => rej(-1)).finally()))
+                .toBeInstanceOf(NewPromise);
+            cached.silenced();
+            expect(cached(new AwkwardPromise((_,rej) => rej(-1)).finally()))
+                .toBeInstanceOf(TestedPromise);
+            cached.silenced();
+            expect(cached(new BackwardPromise((_,rej) => rej(-1)).finally()))
+                .toBeInstanceOf(TestedPromise);
+            cached.silenced();
         });
     });
 
