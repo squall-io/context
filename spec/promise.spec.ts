@@ -39,22 +39,314 @@ describe('Promise', () => {
     });
 
     describe('.then( onResolved?, onRejected? )', () => {
-        it('noop', () => {
+        it('asynchronously call the onResolved callback', async () => {
+            const onResolved = fn();
+            const next = new TestedPromise(resolve => resolve(1)).then(onResolved);
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onResolved).toHaveBeenCalledTimes(1);
+        });
+
+        it('asynchronously call the onResolved callback with resolved value', async () => {
+            const onResolved = fn();
+            const next = new TestedPromise(resolve => resolve(1)).then(onResolved);
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onResolved).nthCalledWith(1, 1);
+        });
+
+        it('asynchronously call the onRejected callback', async () => {
+            const onRejected = fn();
+            const next = new TestedPromise((_, reject) => reject(-1)).then(null, onRejected);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onRejected).toHaveBeenCalledTimes(1);
+        });
+
+        it('asynchronously call the onRejected callback with rejection reason', async () => {
+            const onRejected = fn();
+            const next = new TestedPromise((_, reject) => reject(-1)).then(null, onRejected);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onRejected).nthCalledWith(1, -1);
+        });
+
+        it('ignore (no error) callback when null or undefined', async () => {
+            await new TestedPromise(resolve => resolve(1)).then(null, null);
+            await new TestedPromise(resolve => resolve(1)).then(null, undefined);
+            await new TestedPromise(resolve => resolve(1)).then(undefined, null);
+            await new TestedPromise(resolve => resolve(1)).then(undefined, undefined);
+            await new TestedPromise((_, reject) => reject(-1)).then(null, null).catch(_ => _);
+            await new TestedPromise((_, reject) => reject(-1)).then(null, undefined).catch(_ => _);
+            await new TestedPromise((_, reject) => reject(-1)).then(undefined, null).catch(_ => _);
+            await new TestedPromise((_, reject) => reject(-1)).then(undefined, undefined).catch(_ => _);
+        });
+
+        it('call at most one of the callbacks but never both', async () => {
+            let [onResolved, onRejected] = [fn(), fn()];
+            new TestedPromise(_ => _).then(onResolved, onRejected);
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await new TestedPromise(resolve => setTimeout(resolve));
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+
+            [onResolved, onRejected] = [fn(), fn()];
+            let promise = new TestedPromise(res => res(1)).then(onResolved, onRejected);
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await promise;
+            expect(onResolved).toHaveBeenCalledTimes(1);
+            expect(onResolved).nthCalledWith(1, 1);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+
+            [onResolved, onRejected] = [fn(), fn()];
+            promise = new TestedPromise((_, rej) => rej(-1)).then(onResolved, onRejected);
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await promise;
+            expect(onResolved).toHaveBeenCalledTimes(0);
+            expect(onRejected).toHaveBeenCalledTimes(1);
+            expect(onRejected).nthCalledWith(1, -1);
+        });
+
+        it('return a promise, resolved to either callback awaited return value', async () => {
+            await expect(new TestedPromise(res => res(1))
+                .then(_ => 2, _ => -2)
+            ).resolves.toBe(2);
+            await expect(new TestedPromise(res => res(1))
+                .then(_ => new TestedPromise(res => res(2)), _ => -3)
+            ).resolves.toBe(2);
+            await expect(new TestedPromise(res => res(1))
+                .then(_ => new TestedPromise((_, rej) => rej(-2)), _ => -3)
+            ).rejects.toBe(-2);
+
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .then(_ => 2, _ => 3)
+            ).resolves.toBe(3);
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .then(_ => 2, _ => new TestedPromise(res => res(3)))
+            ).resolves.toBe(3);
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .then(_ => 2, _ => new TestedPromise((_, rej) => rej(-3)))
+            ).rejects.toBe(-3);
+        });
+
+        it('return a promise, rejected to either callback thrown error', async () => {
+            // @formatter:off
+            const [rs, rj] = [new Error('RS'), new Error('RJ')];
+            await expect(new TestedPromise(res => res(1))
+                .then(_ => {throw rs;}, _ => {throw rj;}))
+                .rejects.toBe(rs);
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .then(_ => {throw rs;}, _ => {throw rj;}))
+                .rejects.toBe(rj);
+            // @formatter:on
+        });
+
+        it('propagate state on missing onResolved callback', async () => {
+            await expect(new TestedPromise(res => res(1)).then())
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).then(null))
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).then(undefined))
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).then(null, _ => _))
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).then(undefined, _ => _))
+                .resolves.toBe(1);
+        });
+
+        it('propagate state on missing onRejected callback', async () => {
+            await expect(new TestedPromise((_, rej) => rej(-1)).then())
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(undefined))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(null, null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(null, undefined))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(undefined, null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(undefined, undefined))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(_ => _))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(_ => _))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(_ => _, null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).then(_ => _, undefined))
+                .rejects.toBe(-1);
+        });
+
+        it('return a different promise even when given no parameter', () => {
+            const promise = new TestedPromise(_ => _);
+            expect(promise.then()).not.toBe(promise);
         });
     });
 
     describe('.catch( onRejected? )', () => {
-        it('noop', () => {
+        it('asynchronously call the onRejected callback', async () => {
+            const onRejected = fn();
+            const next = new TestedPromise((_, reject) => reject(-1)).catch(onRejected);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onRejected).toHaveBeenCalledTimes(1);
+        });
+
+        it('asynchronously call the onRejected callback with rejection reason', async () => {
+            const onRejected = fn();
+            const next = new TestedPromise((_, reject) => reject(-1)).catch(onRejected);
+            expect(onRejected).toHaveBeenCalledTimes(0);
+            await next;
+            expect(onRejected).nthCalledWith(1, -1);
+        });
+
+        it('ignore (no error) callback when null or undefined', async () => {
+            await new TestedPromise(resolve => resolve(1)).catch();
+            await new TestedPromise(resolve => resolve(1)).catch(null);
+            await new TestedPromise(resolve => resolve(1)).catch(undefined);
+            await expect(new TestedPromise((_, reject) => reject(-1)).catch())
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, reject) => reject(-1)).catch(null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, reject) => reject(-1)).catch(undefined))
+                .rejects.toBe(-1);
+        });
+
+        it('return a promise, resolved to callback awaited return value', async () => {
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .catch(_ => 2)
+            ).resolves.toBe(2);
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .catch(_ => new TestedPromise(res => res(2)))
+            ).resolves.toBe(2);
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .catch(_ => new TestedPromise((_, rej) => rej(-2)))
+            ).rejects.toBe(-2);
+        });
+
+        it('return a promise, rejected to callback thrown error', async () => {
+            // @formatter:off
+            const rj = new Error('RJ');
+            await expect(new TestedPromise((_, rej) => rej(-1))
+                .catch(_ => {throw rj;})
+            ).rejects.toBe(rj);
+            // @formatter:on
+        });
+
+        it('propagate state on missing onRejected callback', async () => {
+            await expect(new TestedPromise((_, rej) => rej(-1)).catch())
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).catch(null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_, rej) => rej(-1)).catch(undefined))
+                .rejects.toBe(-1);
+        });
+
+        it('return a different promise even when given no parameter', () => {
+            const promise = new TestedPromise(_ => _);
+            expect(promise.catch()).not.toBe(promise);
         });
     });
 
     describe('.finally( onSettled )', () => {
-        it('noop', () => {
+        it('do not execute callback as soon as the promise is resolved', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise(res => res(1));
+            promise.finally(onSettled);
+
+            expect(onSettled).toHaveBeenCalledTimes(0);
+        });
+
+        it('execute callback once asynchronously after the promise is resolved', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise(res => res(1));
+            promise.finally(onSettled);
+            await promise;
+
+            expect(onSettled).toHaveBeenCalledTimes(1);
+        });
+
+        it('execute callback without parameters after the promise is resolved', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise(res => res(1));
+            promise.finally(onSettled);
+            await promise;
+
+            expect(onSettled).nthCalledWith(1);
+        });
+
+        it('do not execute callback as soon as the promise is rejected', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise((_,rej) => rej(-1));
+            cached(promise.finally(onSettled));
+            cached.silenced();
+
+            expect(onSettled).toHaveBeenCalledTimes(0);
+        });
+
+        it('execute callback once asynchronously after the promise is rejected', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise((_,rej) => rej(-1));
+            cached(promise.finally(onSettled));
+            cached.silenced();
+
+            await new TestedPromise(res => res(1));
+            expect(onSettled).toHaveBeenCalledTimes(1);
+        });
+
+        it('execute callback without parameters after the promise is resolved', async () => {
+            const onSettled = fn();
+            const promise = new TestedPromise((_,rej) => rej(-1));
+            cached(promise.finally(onSettled));
+            cached.silenced();
+
+            await new TestedPromise(res => res(1));
+            expect(onSettled).nthCalledWith(1);
+        });
+
+        it('propagate stage with null/undefined or without callback', async () => {
+            await expect(new TestedPromise(res => res(1)).finally())
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).finally(null))
+                .resolves.toBe(1);
+            await expect(new TestedPromise(res => res(1)).finally(undefined))
+                .resolves.toBe(1);
+
+            await expect(new TestedPromise((_,rej) => rej(-1)).finally())
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_,rej) => rej(-1)).finally(null))
+                .rejects.toBe(-1);
+            await expect(new TestedPromise((_,rej) => rej(-1)).finally(undefined))
+                .rejects.toBe(-1);
+        });
+
+        it('return a different promise [even] when no callbacks', () => {
+            const promise = new TestedPromise(res => res(1));
+            expect(promise.finally()).not.toBe(promise);
         });
     });
 
     describe('.[@@toStringTag]', () => {
-        it('noop', () => {
+        it('get the class name of the promise class', () => {
+            class ExtendedPromise<T> extends TestedPromise<T> {
+            }
+            expect(new TestedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
+            expect(new ExtendedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
+        });
+
+        it('get the class name of the promise class unless overriden', () => {
+            class ExtendedPromise<T> extends TestedPromise<T> {
+                get [Symbol.toStringTag](): string {
+                    return ExtendedPromise.name;
+                }
+            }
+            expect(new TestedPromise(fn())[Symbol.toStringTag]).toBe(TestedPromise.name);
+            expect(new ExtendedPromise(fn())[Symbol.toStringTag]).toBe(ExtendedPromise.name);
         });
     });
 
@@ -95,3 +387,10 @@ describe('Promise', () => {
 });
 
 // declare function setTimeout(code: (...args: any[]) => void, delayMilliseconds?: number, ...parameters: any[]): number;
+
+const cached: {
+    silenced(): void;
+    promise?: PromiseLike<any>;
+    <P extends PromiseLike<any>>(promise: P): P;
+} = <P extends PromiseLike<any>>(promise: P) => cached.promise = promise;
+cached.silenced = () => cached.promise?.then(null, _ => _);
