@@ -408,13 +408,29 @@ describe('Promise', () => {
         });
     });
 
-    describe('::reject( reason )', () => {
-        it('noop', () => {
+    describe('::reject( reason? )', () => {
+        it('return a promise that rejects with the given reason', async () => {
+            await expect(TestedPromise.reject(-1)).rejects.toBe(-1);
+            await expect(TestedPromise.reject()).rejects.toBe(undefined);
+
+            const reason = cached(TestedPromise.reject(-1));
+            cached.silenced();
+            await expect(TestedPromise.reject(reason)).rejects.toBe(reason);
         });
     });
 
-    describe('::resolve( value )', () => {
-        it('noop', () => {
+    describe('::resolve( value? )', () => {
+        it('return a promise that resolves with the given value', async () => {
+            await expect(TestedPromise.resolve(1)).resolves.toBe(1);
+            await expect(TestedPromise.resolve()).resolves.toBe(undefined);
+        });
+
+        it('return a promise that resolves with the awaited given value', async () => {
+            await expect(TestedPromise.resolve(TestedPromise.resolve(1))).resolves.toBe(1);
+        });
+
+        it('return a promise that rejects with the awaited given reject-promise', async () => {
+            await expect(TestedPromise.resolve(TestedPromise.reject(-1))).rejects.toBe(-1);
         });
     });
 
