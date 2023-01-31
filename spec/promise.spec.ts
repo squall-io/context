@@ -350,7 +350,7 @@ describe('Promise', () => {
         });
     });
 
-    describe('.[@@species]', () => {
+    describe('::[@@species]', () => {
         it('noop', () => {
         });
     });
