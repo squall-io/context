@@ -463,7 +463,54 @@ describe('Promise', () => {
     });
 
     describe('::any( sources )', () => {
-        it('noop', () => {
+        it('resolve if any of the given sources resolves, with that source resolve value', async () => {
+            await expect(TestedPromise.any([
+                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
+                1,
+            ])).resolves.toBe(1);
+            await expect(TestedPromise.any([
+                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
+                new TestedPromise(res => res(1)),
+            ])).resolves.toBe(1);
+        });
+
+        it('resolve if any of the given sources resolves, with that first source resolve value', async () => {
+            await expect(TestedPromise.any([
+                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
+                new TestedPromise(res => setTimeout(res, 1, 1)),
+                2,
+            ])).resolves.toBe(2);
+            await expect(TestedPromise.any([
+                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
+                new TestedPromise(res => setTimeout(res, 2, 2)),
+                new TestedPromise(res => setTimeout(res, 1, 1)),
+            ])).resolves.toBe(1);
+        });
+
+        it('reject with aggregate error when all sources reject', async () => {
+            await expect(TestedPromise.any([
+                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
+            ]).catch((error: AggregateError) => {
+                expect(error.errors).toEqual([-3, -2, -1]);
+                throw error;
+            })).rejects.toEqual(new AggregateError([], 'All promises were rejected'));
+        });
+
+        it('reject with aggregate error when sources is empty', async () => {
+            await expect(TestedPromise.any([]).catch((error: AggregateError) => {
+                expect(error.errors).toEqual([]);
+                throw error;
+            })).rejects.toEqual(new AggregateError([], 'All promises were rejected'));
         });
     });
 
