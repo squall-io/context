@@ -384,25 +384,25 @@ describe('Promise', () => {
         });
 
         it('is honoured by .catch', () => {
-            expect(cached(new UnstablePromise((_,rej) => rej(-1)).catch()))
+            expect(cached(new UnstablePromise((_, rej) => rej(-1)).catch()))
                 .toBeInstanceOf(NewPromise);
             cached.silenced();
-            expect(cached(new AwkwardPromise((_,rej) => rej(-1)).catch()))
+            expect(cached(new AwkwardPromise((_, rej) => rej(-1)).catch()))
                 .toBeInstanceOf(TestedPromise);
             cached.silenced();
-            expect(cached(new BackwardPromise((_,rej) => rej(-1)).catch()))
+            expect(cached(new BackwardPromise((_, rej) => rej(-1)).catch()))
                 .toBeInstanceOf(TestedPromise);
             cached.silenced();
         });
 
         it('is honoured by .finally', () => {
-            expect(cached(new UnstablePromise((_,rej) => rej(-1)).finally()))
+            expect(cached(new UnstablePromise((_, rej) => rej(-1)).finally()))
                 .toBeInstanceOf(NewPromise);
             cached.silenced();
-            expect(cached(new AwkwardPromise((_,rej) => rej(-1)).finally()))
+            expect(cached(new AwkwardPromise((_, rej) => rej(-1)).finally()))
                 .toBeInstanceOf(TestedPromise);
             cached.silenced();
-            expect(cached(new BackwardPromise((_,rej) => rej(-1)).finally()))
+            expect(cached(new BackwardPromise((_, rej) => rej(-1)).finally()))
                 .toBeInstanceOf(TestedPromise);
             cached.silenced();
         });
@@ -435,7 +435,30 @@ describe('Promise', () => {
     });
 
     describe('::all( sources )', () => {
-        it('noop', () => {
+        it('resolve with an array of awaited values when all resolve', async () => {
+            await expect(TestedPromise.all([])).resolves.toStrictEqual([]);
+            await expect(TestedPromise.all([
+                0,
+                TestedPromise.resolve(2),
+                new TestedPromise(res => setTimeout(res, 1, 1))
+            ])).resolves.toStrictEqual([0, 2, 1]);
+        });
+
+        it('reject when any of the given value is a promise that rejected, with that rejection reason', async () => {
+            await expect(TestedPromise.all([
+                0,
+                TestedPromise.resolve(2),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -1))
+            ])).rejects.toBe(-1);
+        });
+
+        it('when rejecting, reject with the first reject chronology-wise', async () => {
+            await expect(TestedPromise.all([
+                0,
+                TestedPromise.resolve(2),
+                new TestedPromise((_, rej) => setTimeout(rej, 9, -1)),
+                new TestedPromise((_, rej) => setTimeout(rej, 1, -2))
+            ])).rejects.toBe(-2);
         });
     });
 
