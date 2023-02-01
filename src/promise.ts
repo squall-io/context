@@ -91,8 +91,49 @@ export class ContextPromise<T> implements PromiseLike<T> {
         return this.constructor.name;
     }
 
-    finally(_onfinally?: (() => void) | undefined | null): ContextPromise<T> {
-        throw new Error('Not yet implemented');
+    finally(onFinally?: (() => void) | undefined | null): ContextPromise<T> {
+        const NextConstructor = this.#nextConstructor();
+        // @formatter:off
+        onFinally ??= () => {};
+        // @formatter:on
+        return new NextConstructor<T>((resolve, reject) => {
+            if ('pending' === this.#status) {
+                this.#fulfillmentListeners.push(value => {
+                    try {
+                        onFinally!();
+                        resolve(value)
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+                this.#rejectionListeners.push(reason => {
+                    try {
+                        onFinally!();
+                        reject(reason);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            } else if ('rejected' === this.#status) {
+                setTimeout(() => {
+                    try {
+                        onFinally!();
+                        reject(this.#reason);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            } else if ('fulfilled' === this.#status) {
+                setTimeout(() => {
+                    try {
+                        onFinally!();
+                        resolve(this.#value);
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+        }) as ContextPromise<T>;
     }
 
     catch<TResult = never>(onRejected?: ((reason: any) => (PromiseLike<TResult> | TResult)) | undefined | null): ContextPromise<T | TResult> {
