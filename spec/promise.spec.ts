@@ -1,6 +1,8 @@
 import {describe, expect, it, jest} from '@jest/globals';
+import {ContextPromise} from "../src";
+
 // @ts-ignore
-const [TestedPromise, NativePromise] = [Promise, Promise];
+const [TestedPromise, NativePromise] = [ContextPromise, Promise];
 const {fn} = jest;
 
 describe('Promise', () => {
