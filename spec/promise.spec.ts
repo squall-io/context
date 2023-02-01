@@ -512,7 +512,26 @@ describe('Promise', () => {
     });
 
     describe('::race( sources )', () => {
-        it('noop', () => {
+        it('settle as the first source that settled', async () => {
+            await expect(TestedPromise.race([
+                new TestedPromise(res => setTimeout(res, 0, 1)),
+                2,
+            ])).resolves.toBe(2);
+            await expect(TestedPromise.race([
+                new TestedPromise(res => setTimeout(res, 20, 2)),
+                new TestedPromise(res => setTimeout(res, 10, 1)),
+            ])).resolves.toBe(1);
+            await expect(TestedPromise.race([
+                new TestedPromise((_, rej) => setTimeout(rej, 0, -1)),
+                new TestedPromise(res => setTimeout(res, 10, 1)),
+            ])).rejects.toBe(-1);
+        });
+
+        it('never settle if sources is empty', async () => {
+            const onFinally = fn();
+            TestedPromise.race([]).finally(onFinally);
+            await new TestedPromise(res => setTimeout(res, 10, 1));
+            expect(onFinally).not.toHaveBeenCalled();
         });
     });
 
