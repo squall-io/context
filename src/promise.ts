@@ -39,7 +39,7 @@ export class Promise<T> implements PromiseLike<T> {
     #reason: any = undefined as any;
     #value: T = undefined as any;
 
-    constructor(executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+    constructor(executor: Promise.Executor<T>) {
         try {
             executor(value => this.#resolve(value), reason => this.#reject(reason));
         } catch (error) {
@@ -125,11 +125,11 @@ export class Promise<T> implements PromiseLike<T> {
         });
     }
 
-    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{
-        -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>>;
-    }>;
-    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): Promise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(values: any): Promise<PromiseSettledResult<unknown>[]> {
+    static allSettled<T extends readonly unknown[] | []>(values: T):
+        Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>>; }>;
+    static allSettled<T>(values: Iterable<T | PromiseLike<T>>):
+        Promise<PromiseSettledResult<Awaited<T>>[]>;
+    static allSettled(values: Iterable<any>): Promise<PromiseSettledResult<unknown>[]> {
         return new this(resolve => {
             const settlements = new Map<unknown, PromiseSettledResult<unknown>>();
 
@@ -163,23 +163,23 @@ export class Promise<T> implements PromiseLike<T> {
         return Promise.name;
     }
 
-    finally(onFinally?: (() => void) | undefined | null): Promise<T> {
+    finally(onFinally?: Promise.OnFinally): Promise<T> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<T>((resolve, reject) => {
             if ('pending' === this.#status) {
                 this.#fulfillmentListeners.push(value =>
-                    Promise.#onFinally(onFinally, {value}, resolve, reject));
+                    Promise.#onFinally(onFinally, resolve, reject, {value}));
                 this.#rejectionListeners.push(reason =>
-                    Promise.#onFinally(onFinally, {reason}, resolve, reject));
+                    Promise.#onFinally(onFinally, resolve, reject, {reason}));
             } else if ('rejected' === this.#status) {
-                setTimeout(() => Promise.#onFinally(onFinally, {reason: this.#reason}, resolve, reject));
+                setTimeout(() => Promise.#onFinally(onFinally, resolve, reject, {reason: this.#reason}));
             } else if ('fulfilled' === this.#status) {
-                setTimeout(() => Promise.#onFinally(onFinally, {value: this.#value}, resolve, reject));
+                setTimeout(() => Promise.#onFinally(onFinally, resolve, reject, {value: this.#value}));
             }
         }) as Promise<T>;
     }
 
-    catch<R = never>(onRejected?: ((reason: any) => (PromiseLike<R> | R)) | undefined | null): Promise<T | R> {
+    catch<R = never>(onRejected?: Promise.OnRejected<R>): Promise<T | R> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<T | R>((resolve, reject) => {
             if ('pending' === this.#status) {
@@ -192,8 +192,7 @@ export class Promise<T> implements PromiseLike<T> {
         }) as Promise<T | R>;
     }
 
-    then<F = T, R = never>(onFulfilled?: ((value: T) => (PromiseLike<F> | F)) | undefined | null,
-                           onRejected?: ((reason: any) => (PromiseLike<R> | R)) | undefined | null): Promise<F | R> {
+    then<F = T, R = never>(onFulfilled?: Promise.OnFulfilled<T, F>, onRejected?: Promise.OnRejected<R>): Promise<F | R> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<F | R>((resolve, reject) => {
             if ('pending' === this.#status) {
@@ -211,8 +210,8 @@ export class Promise<T> implements PromiseLike<T> {
         return value && ('object' === typeof value) && ('then' in value) && ('function' === typeof value['then']);
     }
 
-    static #onFulfilled<R>(onFulfilled: ((value: any) => (PromiseLike<R> | R)) | undefined | null,
-                           resolve: (value: any) => void, reject: (reason: any) => void, value: any): void {
+    static #onFulfilled<F>(onFulfilled: Promise.OnFulfilled<any, F>,
+                           resolve: Promise.Resolve<F>, reject: Promise.Reject, value: any): void {
         if (onFulfilled) {
             try {
                 resolve(onFulfilled(value) as any);
@@ -224,8 +223,8 @@ export class Promise<T> implements PromiseLike<T> {
         }
     }
 
-    static #onRejected<R = never>(onRejected: ((reason: any) => (PromiseLike<R> | R)) | undefined | null,
-                                  resolve: (value: any) => void, reject: (reason: any) => void, reason: any): void {
+    static #onRejected<R = never>(onRejected: Promise.OnRejected<R>,
+                                  resolve: Promise.Resolve<R>, reject: Promise.Reject, reason: any): void {
         if (onRejected) {
             try {
                 resolve(onRejected(reason) as any);
@@ -237,8 +236,8 @@ export class Promise<T> implements PromiseLike<T> {
         }
     }
 
-    static #onFinally(onFinally: (() => void) | undefined | null, content: { value: any } | { reason: any },
-                      resolve: (value: any) => void, reject: (reason: any) => void): void {
+    static #onFinally(onFinally: Promise.OnFinally, resolve: Promise.Resolve<any>, reject: Promise.Reject,
+                      content: { value: any } | { reason: any }): void {
         try {
             onFinally?.();
             'value' in content ? resolve(content.value) : reject(content.reason);
@@ -249,5 +248,27 @@ export class Promise<T> implements PromiseLike<T> {
 
     #nextConstructor(): PromiseConstructor {
         return (this.constructor as any)[Symbol.species] ?? Promise;
+    }
+}
+
+export namespace Promise {
+    export type OnFulfilled<T, F> = {
+        (value: T): PromiseLike<F> | F;
+    } | undefined | null;
+    export type OnRejected<R> = {
+        (reason: any): PromiseLike<R> | R;
+    } | undefined | null;
+    export type OnFinally = {
+        (): void;
+    } | undefined | null;
+
+    export type Executor<T> = {
+        (resolve: Promise.Resolve<T>, reject: Promise.Reject): void;
+    }
+    export type Resolve<T> = {
+        (value: T | PromiseLike<T>): void;
+    }
+    export type Reject = {
+        (reason?: any): void;
     }
 }
