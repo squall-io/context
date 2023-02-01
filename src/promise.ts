@@ -1,5 +1,40 @@
 export class ContextPromise<T> implements PromiseLike<T> {
-    constructor(_executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+    #resolve = (value: T | PromiseLike<T>) => {
+        this.#resolve = () => undefined;
+        this.#reject = () => undefined;
+
+        if (ContextPromise.#isPromiseLike<T>(value)) {
+            value.then(value => {
+                this.#status = 'fulfilled';
+                this.#value = value;
+            }, reason => {
+                this.#status = 'rejected';
+                this.#reason = reason;
+            })
+        } else {
+            this.#status = 'fulfilled';
+            this.#value = value;
+        }
+    };
+    #reject = (reason?: any) => {
+        this.#resolve = () => undefined;
+        this.#reject = () => undefined;
+        this.#status = 'rejected';
+        this.#reason = reason;
+    };
+    // @ts-ignore" TS6133: '#status' is declared but its value is never read.
+    #status: 'pending' | 'rejected' | 'fulfilled' = 'pending';
+    // @ts-ignore" TS6133: '#reason' is declared but its value is never read.
+    #reason: any;
+    // @ts-ignore" TS6133: '#value' is declared but its value is never read.
+    #value: T;
+
+    constructor(executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+        try {
+            executor(value => this.#resolve(value), reason => this.#reject(reason));
+        } catch (error) {
+            this.#reject(error);
+        }
     }
 
     static get [Symbol.species](): { new(..._: any[]): PromiseLike<any> } | null | undefined {
@@ -53,6 +88,10 @@ export class ContextPromise<T> implements PromiseLike<T> {
         _onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
         _onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): ContextPromise<TResult1 | TResult2> {
         throw new Error('Not yet implemented');
+    }
+
+    static #isPromiseLike<T>(value: any): value is PromiseLike<T> {
+        return value && ('object' === typeof value) && ('then' in value) && ('function' === typeof value['then']);
     }
 }
 
