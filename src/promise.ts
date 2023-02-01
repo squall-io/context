@@ -27,13 +27,11 @@ export class Promise<T> implements PromiseLike<T> {
         }
     };
     #reject = (reason?: any) => {
-        this.#resolve = () => undefined;
-        this.#reject = () => undefined;
-        this.#status = 'rejected';
-        this.#reason = reason;
-
-        this.#rejectionListeners.forEach(listener => listener(reason));
-        this.#rejectionListeners = [];
+        [this.#resolve, this.#reject, this.#status, this.#reason] = [() => void 0, () => void 0, 'rejected', reason];
+        setTimeout(listeners => {
+            listeners.forEach(listener => listener(reason))
+        }, 0, this.#rejectionListeners);
+        [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
     };
     #status: 'pending' | 'rejected' | 'fulfilled' = 'pending';
     #rejectionListeners: { (reason: any): any }[] = [];
