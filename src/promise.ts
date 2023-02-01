@@ -56,15 +56,15 @@ export class ContextPromise<T> implements PromiseLike<T> {
         return this;
     }
 
-    static reject<T = never>(_reason?: any): ContextPromise<T> {
-        throw new Error('Not yet implemented');
+    static reject<T = never>(reason?: any): ContextPromise<T> {
+        return new this((_resolve, reject) => reject(reason));
     }
 
     static resolve(): ContextPromise<void>;
     static resolve<T>(value: T): ContextPromise<Awaited<T>>;
     static resolve<T>(value: T | PromiseLike<T>): ContextPromise<Awaited<T>>;
-    static resolve(_value?: any): ContextPromise<any> {
-        throw new Error('Not yet implemented');
+    static resolve<T>(value?: T | PromiseLike<T>): ContextPromise<void | Awaited<T>> {
+        return new this(resolve => resolve(value as any));
     }
 
     static all<T extends readonly unknown[] | []>(_values: T): ContextPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
