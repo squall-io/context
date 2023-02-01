@@ -487,11 +487,11 @@ describe('Promise', () => {
                 2,
             ])).resolves.toBe(2);
             await expect(TestedPromise.any([
-                new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
-                new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
-                new TestedPromise((_, rej) => setTimeout(rej, 1, -1)),
-                new TestedPromise(res => setTimeout(res, 2, 2)),
-                new TestedPromise(res => setTimeout(res, 1, 1)),
+                new TestedPromise((_, rej) => setTimeout(rej, 30, -3)),
+                new TestedPromise((_, rej) => setTimeout(rej, 20, -2)),
+                new TestedPromise((_, rej) => setTimeout(rej, 10, -1)),
+                new TestedPromise(res => setTimeout(res, 20, 2)),
+                new TestedPromise(res => setTimeout(res, 10, 1)),
             ])).resolves.toBe(1);
         });
 
