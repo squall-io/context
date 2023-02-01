@@ -1,4 +1,59 @@
-export class ContextPromise<T> extends Promise<T> {
+export class ContextPromise<T> implements PromiseLike<T> {
+    constructor(_executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
+    }
+
+    static get [Symbol.species](): { new(..._: any[]): PromiseLike<any> } | null | undefined {
+        return this;
+    }
+
+    static reject<T = never>(_reason?: any): Promise<T> {
+        throw new Error('Not yet implemented');
+    }
+
+    static resolve(): Promise<void>;
+    static resolve<T>(value: T): Promise<Awaited<T>>;
+    static resolve<T>(value: T | PromiseLike<T>): Promise<Awaited<T>>;
+    static resolve(_value?: any): Promise<any> {
+        throw new Error('Not yet implemented');
+    }
+
+    static all<T extends readonly unknown[] | []>(_values: T): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+        throw new Error('Not yet implemented');
+    }
+
+    static any<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>>;
+    static any<T>(values: Iterable<T | PromiseLike<T>>): Promise<Awaited<T>>;
+    static any(_values: any): Promise<any> {
+        throw new Error('Not yet implemented');
+    }
+
+    static race<T extends readonly unknown[] | []>(_values: T): Promise<Awaited<T[number]>> {
+        throw new Error('Not yet implemented');
+    }
+
+    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
+    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): Promise<PromiseSettledResult<Awaited<T>>[]>;
+    static allSettled(_values: any): Promise<PromiseSettledResult<any>[]> {
+        throw new Error('Not yet implemented');
+    }
+
+    get [Symbol.toStringTag](): string {
+        return this.constructor.name;
+    }
+
+    finally(_onfinally?: (() => void) | undefined | null): ContextPromise<T> {
+        throw new Error('Not yet implemented');
+    }
+
+    catch<TResult = never>(_onrejected?: ((reason: any) => (PromiseLike<TResult> | TResult)) | undefined | null): ContextPromise<T | TResult> {
+        throw new Error('Not yet implemented');
+    }
+
+    then<TResult1 = T, TResult2 = never>(
+        _onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
+        _onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): Promise<TResult1 | TResult2> {
+        throw new Error('Not yet implemented');
+    }
 }
 
 // const OriginalPromise: PromiseConstructorLike = (() => {
