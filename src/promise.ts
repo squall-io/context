@@ -118,8 +118,6 @@ export class ContextPromise<T> implements PromiseLike<T> {
             } else if ('fulfilled' === this.#status) {
                 resolve(this.#value);
             }
-            const listener = (reason: any) => setTimeout(onRejected!, 0, reason);
-            this.#rejectionListeners.push(listener)
         }) as ContextPromise<T | TResult>;
     }
 
@@ -163,8 +161,6 @@ export class ContextPromise<T> implements PromiseLike<T> {
                     }
                 });
             }
-            const listener = (reason: any) => setTimeout(onRejected!, 0, reason);
-            this.#rejectionListeners.push(listener)
         }) as ContextPromise<TResult1 | TResult2>;
     }
 
