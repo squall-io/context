@@ -139,15 +139,25 @@ export class ContextPromise<T> implements PromiseLike<T> {
                 if (this.#isPromiseLike(value)) {
                     value.then(resolved => {
                         settlements.set(value, {value: resolved, status: 'fulfilled'});
+
+                        if (settlements.size === new Set(values).size) {
+                            resolve([...values].map(value => settlements.get(value)!));
+                        }
                     }, reason => {
                         settlements.set(value, {reason, status: 'rejected'});
+
+                        if (settlements.size === new Set(values).size) {
+                            resolve([...values].map(value => settlements.get(value)!));
+                        }
                     });
                 } else {
                     settlements.set(value, {value, status: 'fulfilled'});
                 }
             }
 
-            settlements.size === new Set(values).size && resolve([...values].map(value => settlements.get(value)!));
+            if (settlements.size === new Set(values).size) {
+                resolve([...values].map(value => settlements.get(value)!));
+            }
         });
     }
 
