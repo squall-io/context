@@ -269,6 +269,7 @@ describe('Promise', () => {
             promise.finally(onSettled);
 
             expect(onSettled).toHaveBeenCalledTimes(0);
+            await expect(promise).resolves.toBe(1);
         });
 
         it('execute callback once asynchronously after the promise is resolved', async () => {
@@ -278,6 +279,7 @@ describe('Promise', () => {
             await promise;
 
             expect(onSettled).toHaveBeenCalledTimes(1);
+            await expect(promise).resolves.toBe(1);
         });
 
         it('execute callback without parameters after the promise is resolved', async () => {
@@ -287,35 +289,36 @@ describe('Promise', () => {
             await promise;
 
             expect(onSettled).nthCalledWith(1);
+            await expect(promise).resolves.toBe(1);
         });
 
         it('do not execute callback as soon as the promise is rejected', async () => {
             const onSettled = fn();
             const promise = new TestedPromise((_, rej) => rej(-1));
-            cached(promise.finally(onSettled));
-            cached.silenced();
+            const finalized = promise.finally(onSettled);
 
             expect(onSettled).toHaveBeenCalledTimes(0);
+            await expect(finalized).rejects.toBe(-1);
         });
 
         it('execute callback once asynchronously after the promise is rejected', async () => {
             const onSettled = fn();
             const promise = new TestedPromise((_, rej) => rej(-1));
-            cached(promise.finally(onSettled));
-            cached.silenced();
+            const finalized = promise.finally(onSettled);
 
             await new TestedPromise(res => res(1));
             expect(onSettled).toHaveBeenCalledTimes(1);
+            await expect(finalized).rejects.toBe(-1);
         });
 
         it('execute callback without parameters after the promise is resolved', async () => {
             const onSettled = fn();
             const promise = new TestedPromise((_, rej) => rej(-1));
-            cached(promise.finally(onSettled));
-            cached.silenced();
+            const finalized = promise.finally(onSettled);
 
             await new TestedPromise(res => res(1));
             expect(onSettled).nthCalledWith(1);
+            await expect(finalized).rejects.toBe(-1);
         });
 
         it('propagate stage with null/undefined or without callback', async () => {
