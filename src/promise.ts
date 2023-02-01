@@ -131,8 +131,24 @@ export class ContextPromise<T> implements PromiseLike<T> {
 
     static allSettled<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
     static allSettled<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(_values: any): ContextPromise<PromiseSettledResult<any>[]> {
-        throw new Error('Not yet implemented');
+    static allSettled(values: any): ContextPromise<PromiseSettledResult<unknown>[]> {
+        return new this(resolve => {
+            const settlements = new Map<unknown, PromiseSettledResult<unknown>>();
+
+            for (const value of values) {
+                if (this.#isPromiseLike(value)) {
+                    value.then(resolved => {
+                        settlements.set(value, {value: resolved, status: 'fulfilled'});
+                    }, reason => {
+                        settlements.set(value, {reason, status: 'rejected'});
+                    });
+                } else {
+                    settlements.set(value, {value, status: 'fulfilled'});
+                }
+            }
+
+            settlements.size === new Set(values).size && resolve([...values].map(value => settlements.get(value)!));
+        });
     }
 
     get [Symbol.toStringTag](): string {
