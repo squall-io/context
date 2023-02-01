@@ -169,45 +169,16 @@ export class Promise<T> implements PromiseLike<T> {
 
     finally(onFinally?: (() => void) | undefined | null): Promise<T> {
         const NextConstructor = this.#nextConstructor();
-        // @formatter:off
-        onFinally ??= () => {};
-        // @formatter:on
         return new NextConstructor<T>((resolve, reject) => {
             if ('pending' === this.#status) {
-                this.#fulfillmentListeners.push(value => {
-                    try {
-                        onFinally!();
-                        resolve(value)
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
-                this.#rejectionListeners.push(reason => {
-                    try {
-                        onFinally!();
-                        reject(reason);
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
+                this.#fulfillmentListeners.push(value =>
+                    Promise.#onFinally(onFinally, {value}, resolve, reject));
+                this.#rejectionListeners.push(reason =>
+                    Promise.#onFinally(onFinally, {reason}, resolve, reject));
             } else if ('rejected' === this.#status) {
-                setTimeout(() => {
-                    try {
-                        onFinally!();
-                        reject(this.#reason);
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
+                setTimeout(() => Promise.#onFinally(onFinally, {reason: this.#reason}, resolve, reject));
             } else if ('fulfilled' === this.#status) {
-                setTimeout(() => {
-                    try {
-                        onFinally!();
-                        resolve(this.#value);
-                    } catch (error) {
-                        reject(error);
-                    }
-                });
+                setTimeout(() => Promise.#onFinally(onFinally, {value: this.#value}, resolve, reject));
             }
         }) as Promise<T>;
     }
@@ -267,6 +238,16 @@ export class Promise<T> implements PromiseLike<T> {
             }
         } else {
             reject(reason);
+        }
+    }
+
+    static #onFinally(onFinally: (() => void) | undefined | null, content: { value: any } | { reason: any },
+                      resolve: (value: any) => void, reject: (reason: any) => void): void {
+        try {
+            onFinally?.();
+            'value' in content ? resolve(content.value) : reject(content.reason);
+        } catch (error) {
+            reject(error);
         }
     }
 
