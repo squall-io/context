@@ -152,7 +152,7 @@ export class ContextPromise<T> implements PromiseLike<T> {
     }
 
     get [Symbol.toStringTag](): string {
-        return this.constructor.name;
+        return ContextPromise.name;
     }
 
     finally(onFinally?: (() => void) | undefined | null): ContextPromise<T> {
