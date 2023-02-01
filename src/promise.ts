@@ -7,13 +7,25 @@ export class ContextPromise<T> implements PromiseLike<T> {
             value.then(value => {
                 this.#status = 'fulfilled';
                 this.#value = value;
+
+                this.#fulfillmentListeners.forEach(listener => listener(value));
+                this.#fulfillmentListeners = [];
+                this.#rejectionListeners = [];
             }, reason => {
                 this.#status = 'rejected';
                 this.#reason = reason;
+
+                this.#rejectionListeners.forEach(listener => listener(reason));
+                this.#fulfillmentListeners = [];
+                this.#rejectionListeners = [];
             })
         } else {
             this.#status = 'fulfilled';
             this.#value = value;
+
+            this.#fulfillmentListeners.forEach(listener => listener(value));
+            this.#fulfillmentListeners = [];
+            this.#rejectionListeners = [];
         }
     };
     #reject = (reason?: any) => {
@@ -21,9 +33,14 @@ export class ContextPromise<T> implements PromiseLike<T> {
         this.#reject = () => undefined;
         this.#status = 'rejected';
         this.#reason = reason;
+
+        this.#rejectionListeners.forEach(listener => listener(reason));
+        this.#rejectionListeners = [];
     };
     // @ts-ignore" TS6133: '#status' is declared but its value is never read.
     #status: 'pending' | 'rejected' | 'fulfilled' = 'pending';
+    #rejectionListeners: { (reason: any): any }[] = [];
+    #fulfillmentListeners: { (value: T): any }[] = [];
     // @ts-ignore" TS6133: '#reason' is declared but its value is never read.
     #reason: any;
     // @ts-ignore" TS6133: '#value' is declared but its value is never read.
