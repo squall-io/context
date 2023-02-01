@@ -5,27 +5,25 @@ export class Promise<T> implements PromiseLike<T> {
 
         if (Promise.#isPromiseLike<T>(value)) {
             value.then(value => {
-                this.#status = 'fulfilled';
-                this.#value = value;
-
-                this.#fulfillmentListeners.forEach(listener => listener(value));
-                this.#fulfillmentListeners = [];
-                this.#rejectionListeners = [];
+                [this.#status, this.#value] = ['fulfilled', value];
+                setTimeout(listeners => {
+                    listeners.forEach(listener => listener(value))
+                }, 0, this.#fulfillmentListeners);
+                [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
             }, reason => {
-                this.#status = 'rejected';
-                this.#reason = reason;
-
-                this.#rejectionListeners.forEach(listener => listener(reason));
-                this.#fulfillmentListeners = [];
-                this.#rejectionListeners = [];
+                [this.#status, this.#reason] = ['rejected', reason];
+                setTimeout(listeners => {
+                    listeners.forEach(listener => listener(reason))
+                }, 0, this.#rejectionListeners);
+                [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
             })
         } else {
-            this.#status = 'fulfilled';
-            this.#value = value;
-
+            [this.#status, this.#value] = ['fulfilled', value];
             this.#fulfillmentListeners.forEach(listener => listener(value));
-            this.#fulfillmentListeners = [];
-            this.#rejectionListeners = [];
+            setTimeout(listeners => {
+                listeners.forEach(listener => listener(value))
+            }, 0, this.#fulfillmentListeners);
+            [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
         }
     };
     #reject = (reason?: any) => {
