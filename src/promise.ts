@@ -112,8 +112,16 @@ export class ContextPromise<T> implements PromiseLike<T> {
         });
     }
 
-    static race<T extends readonly unknown[] | []>(_values: T): ContextPromise<Awaited<T[number]>> {
-        throw new Error('Not yet implemented');
+    static race<T extends readonly unknown[] | []>(values: T): ContextPromise<Awaited<T[number]>> {
+        return new this((resolve, reject) => {
+            for (const value of values) {
+                if (this.#isPromiseLike(value)) {
+                    value.then(resolve as any, reject)
+                } else {
+                    resolve(value as any);
+                }
+            }
+        });
     }
 
     static allSettled<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
