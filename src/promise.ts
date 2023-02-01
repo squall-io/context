@@ -40,9 +40,8 @@ export class ContextPromise<T> implements PromiseLike<T> {
     #status: 'pending' | 'rejected' | 'fulfilled' = 'pending';
     #rejectionListeners: { (reason: any): any }[] = [];
     #fulfillmentListeners: { (value: T): any }[] = [];
-    #reason: any;
-    // @ts-ignore" TS6133: '#value' is declared but its value is never read.
-    #value: T;
+    #reason: any = undefined as any;
+    #value: T = undefined as any;
 
     constructor(executor: (resolve: (value: T | PromiseLike<T>) => void, reject: (reason?: any) => void) => void) {
         try {
