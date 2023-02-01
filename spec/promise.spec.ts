@@ -504,7 +504,7 @@ describe('Promise', () => {
             ])).resolves.toBe(1);
         });
 
-        it('reject with aggregate error when non of its sources resolved', async () => {
+        it('reject with aggregate error when none of its sources resolved', async () => {
             await expect(TestedPromise.any([
                 new TestedPromise((_, rej) => setTimeout(rej, 3, -3)),
                 new TestedPromise((_, rej) => setTimeout(rej, 2, -2)),
