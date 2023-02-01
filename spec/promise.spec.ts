@@ -1,7 +1,6 @@
 import {describe, expect, it, jest} from '@jest/globals';
 import {Promise as ContextPromise} from "../src";
 
-// @ts-ignore
 const TestedPromise = ContextPromise;
 const {fn} = jest;
 
