@@ -129,7 +129,9 @@ export class Promise<T> implements PromiseLike<T> {
         });
     }
 
-    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
+    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{
+        -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>>;
+    }>;
     static allSettled<T>(values: Iterable<T | PromiseLike<T>>): Promise<PromiseSettledResult<Awaited<T>>[]>;
     static allSettled(values: any): Promise<PromiseSettledResult<unknown>[]> {
         return new this(resolve => {
@@ -210,9 +212,9 @@ export class Promise<T> implements PromiseLike<T> {
         }) as Promise<T>;
     }
 
-    catch<TResult = never>(onRejected?: ((reason: any) => (PromiseLike<TResult> | TResult)) | undefined | null): Promise<T | TResult> {
+    catch<R = never>(onRejected?: ((reason: any) => (PromiseLike<R> | R)) | undefined | null): Promise<T | R> {
         const NextConstructor = this.#nextConstructor();
-        return new NextConstructor<T | TResult>((resolve, reject) => {
+        return new NextConstructor<T | R>((resolve, reject) => {
             if ('pending' === this.#status) {
                 this.#rejectionListeners.push(reason => Promise.#onRejected(onRejected, resolve, reject, reason));
             } else if ('rejected' === this.#status) {
@@ -220,15 +222,13 @@ export class Promise<T> implements PromiseLike<T> {
             } else if ('fulfilled' === this.#status) {
                 resolve(this.#value);
             }
-        }) as Promise<T | TResult>;
+        }) as Promise<T | R>;
     }
 
-    then<TResult1 = T, TResult2 = never>(
-        onFulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
-        onRejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null
-    ): Promise<TResult1 | TResult2> {
+    then<F = T, R = never>(onFulfilled?: ((value: T) => (PromiseLike<F> | F)) | undefined | null,
+                           onRejected?: ((reason: any) => (PromiseLike<R> | R)) | undefined | null): Promise<F | R> {
         const NextConstructor = this.#nextConstructor();
-        return new NextConstructor<TResult1 | TResult2>((resolve, reject) => {
+        return new NextConstructor<F | R>((resolve, reject) => {
             if ('pending' === this.#status) {
                 this.#fulfillmentListeners.push(value => Promise.#onFulfilled(onFulfilled, resolve, reject, value));
                 this.#rejectionListeners.push(reason => Promise.#onRejected(onRejected, resolve, reject, reason));
@@ -237,7 +237,7 @@ export class Promise<T> implements PromiseLike<T> {
             } else if ('fulfilled' === this.#status) {
                 setTimeout(() => Promise.#onFulfilled(onFulfilled, resolve, reject, this.#value));
             }
-        }) as Promise<TResult1 | TResult2>;
+        }) as Promise<F | R>;
     }
 
     static #isPromiseLike<T>(value: any): value is PromiseLike<T> {
