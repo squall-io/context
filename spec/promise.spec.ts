@@ -60,7 +60,7 @@ describe('Promise', () => {
             const next = new TestedPromise(resolve => resolve(1)).then(onResolved);
             expect(onResolved).toHaveBeenCalledTimes(0);
             await next;
-            expect(onResolved).nthCalledWith(1, 1, undefined);
+            expect(onResolved).nthCalledWith(1, 1);
         });
 
         it('asynchronously call the onRejected callback', async () => {
@@ -76,7 +76,7 @@ describe('Promise', () => {
             const next = new TestedPromise((_, reject) => reject(-1)).then(null, onRejected);
             expect(onRejected).toHaveBeenCalledTimes(0);
             await next;
-            expect(onRejected).nthCalledWith(1, -1, undefined);
+            expect(onRejected).nthCalledWith(1, -1);
         });
 
         it('ignore (no error) callback when null or undefined', async () => {
@@ -105,7 +105,7 @@ describe('Promise', () => {
             expect(onRejected).toHaveBeenCalledTimes(0);
             await promise;
             expect(onResolved).toHaveBeenCalledTimes(1);
-            expect(onResolved).nthCalledWith(1, 1, undefined);
+            expect(onResolved).nthCalledWith(1, 1);
             expect(onRejected).toHaveBeenCalledTimes(0);
 
             [onResolved, onRejected] = [fn(), fn()];
@@ -115,7 +115,7 @@ describe('Promise', () => {
             await promise;
             expect(onResolved).toHaveBeenCalledTimes(0);
             expect(onRejected).toHaveBeenCalledTimes(1);
-            expect(onRejected).nthCalledWith(1, -1, undefined);
+            expect(onRejected).nthCalledWith(1, -1);
         });
 
         it('return a promise, resolved to either callback awaited return value', async () => {
@@ -210,7 +210,7 @@ describe('Promise', () => {
             const next = new TestedPromise((_, reject) => reject(-1)).catch(onRejected);
             expect(onRejected).toHaveBeenCalledTimes(0);
             await next;
-            expect(onRejected).nthCalledWith(1, -1, undefined);
+            expect(onRejected).nthCalledWith(1, -1);
         });
 
         it('ignore (no error) callback when null or undefined', async () => {
@@ -287,7 +287,7 @@ describe('Promise', () => {
             promise.finally(onSettled);
             await promise;
 
-            expect(onSettled).nthCalledWith(1, undefined);
+            expect(onSettled).nthCalledWith(1);
             await expect(promise).resolves.toBe(1);
         });
 
@@ -316,7 +316,7 @@ describe('Promise', () => {
             const finalized = promise.finally(onSettled);
 
             await new TestedPromise(res => res(1));
-            expect(onSettled).nthCalledWith(1, undefined);
+            expect(onSettled).nthCalledWith(1);
             await expect(finalized).rejects.toBe(-1);
         });
 

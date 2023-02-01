@@ -229,7 +229,9 @@ export class Promise<T> implements PromiseLike<T> {
                            value: any, context?: Context): void {
         if (onFulfilled) {
             try {
-                resolve(onFulfilled(value, context) as any, context);
+                context
+                    ? resolve(onFulfilled(value, context) as any, context)
+                    : resolve(onFulfilled(value));
             } catch (error) {
                 reject(error, context);
             }
@@ -243,7 +245,9 @@ export class Promise<T> implements PromiseLike<T> {
                                   reason: any, context?: Context): void {
         if (onRejected) {
             try {
-                resolve(onRejected(reason, context) as any, context);
+                context
+                    ? resolve(onRejected(reason, context) as any, context)
+                    : resolve(onRejected((reason)));
             } catch (error) {
                 reject(error, context);
             }
@@ -255,7 +259,7 @@ export class Promise<T> implements PromiseLike<T> {
     static #onFinally(onFinally: Promise.OnFinally, resolve: Promise.Resolve<any>, reject: Promise.Reject,
                       content: { value: any } | { reason: any }, context?: Context): void {
         try {
-            onFinally?.(context);
+            onFinally?.(...context ? [context] : []);
             'value' in content ? resolve(content.value, context) : reject(content.reason, context);
         } catch (error) {
             reject(error, context);
@@ -269,13 +273,13 @@ export class Promise<T> implements PromiseLike<T> {
 
 export namespace Promise {
     export type OnFulfilled<T, F> = {
-        (value: T, context?: Context | undefined): PromiseLike<F> | F;
+        (value: T, context?: Context): PromiseLike<F> | F;
     } | undefined | null;
     export type OnRejected<R> = {
-        (reason: any, context?: Context | undefined): PromiseLike<R> | R;
+        (reason: any, context?: Context): PromiseLike<R> | R;
     } | undefined | null;
     export type OnFinally = {
-        (context?: Context | undefined): void;
+        (context?: Context): void;
     } | undefined | null;
 
     export type Executor<T> = {
