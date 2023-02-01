@@ -1,9 +1,9 @@
-export class ContextPromise<T> implements PromiseLike<T> {
+export class Promise<T> implements PromiseLike<T> {
     #resolve = (value: T | PromiseLike<T>) => {
         this.#resolve = () => undefined;
         this.#reject = () => undefined;
 
-        if (ContextPromise.#isPromiseLike<T>(value)) {
+        if (Promise.#isPromiseLike<T>(value)) {
             value.then(value => {
                 this.#status = 'fulfilled';
                 this.#value = value;
@@ -55,18 +55,18 @@ export class ContextPromise<T> implements PromiseLike<T> {
         return this;
     }
 
-    static reject<T = never>(reason?: any): ContextPromise<T> {
+    static reject<T = never>(reason?: any): Promise<T> {
         return new this((_resolve, reject) => reject(reason));
     }
 
-    static resolve(): ContextPromise<void>;
-    static resolve<T>(value: T): ContextPromise<Awaited<T>>;
-    static resolve<T>(value: T | PromiseLike<T>): ContextPromise<Awaited<T>>;
-    static resolve<T>(value?: T | PromiseLike<T>): ContextPromise<void | Awaited<T>> {
+    static resolve(): Promise<void>;
+    static resolve<T>(value: T): Promise<Awaited<T>>;
+    static resolve<T>(value: T | PromiseLike<T>): Promise<Awaited<T>>;
+    static resolve<T>(value?: T | PromiseLike<T>): Promise<void | Awaited<T>> {
         return new this(resolve => resolve(value as any));
     }
 
-    static all<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+    static all<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
         return new this((resolve, reject) => {
             const fulfillment = new Map<unknown, unknown>();
 
@@ -90,9 +90,9 @@ export class ContextPromise<T> implements PromiseLike<T> {
         });
     }
 
-    static any<T extends readonly unknown[] | []>(values: T): ContextPromise<Awaited<T[number]>>;
-    static any<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<Awaited<T>>;
-    static any(values: Iterable<any>): ContextPromise<any> {
+    static any<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>>;
+    static any<T>(values: Iterable<T | PromiseLike<T>>): Promise<Awaited<T>>;
+    static any(values: Iterable<any>): Promise<any> {
         return new this((resolve, reject) => {
             if (0 === [...values].length) {
                 return reject(new AggregateError([], 'All promises were rejected'));
@@ -117,7 +117,7 @@ export class ContextPromise<T> implements PromiseLike<T> {
         });
     }
 
-    static race<T extends readonly unknown[] | []>(values: T): ContextPromise<Awaited<T[number]>> {
+    static race<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>> {
         return new this((resolve, reject) => {
             for (const value of values) {
                 if (this.#isPromiseLike(value)) {
@@ -129,9 +129,9 @@ export class ContextPromise<T> implements PromiseLike<T> {
         });
     }
 
-    static allSettled<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
-    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(values: any): ContextPromise<PromiseSettledResult<unknown>[]> {
+    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
+    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): Promise<PromiseSettledResult<Awaited<T>>[]>;
+    static allSettled(values: any): Promise<PromiseSettledResult<unknown>[]> {
         return new this(resolve => {
             const settlements = new Map<unknown, PromiseSettledResult<unknown>>();
 
@@ -162,10 +162,10 @@ export class ContextPromise<T> implements PromiseLike<T> {
     }
 
     get [Symbol.toStringTag](): string {
-        return ContextPromise.name;
+        return Promise.name;
     }
 
-    finally(onFinally?: (() => void) | undefined | null): ContextPromise<T> {
+    finally(onFinally?: (() => void) | undefined | null): Promise<T> {
         const NextConstructor = this.#nextConstructor();
         // @formatter:off
         onFinally ??= () => {};
@@ -207,10 +207,10 @@ export class ContextPromise<T> implements PromiseLike<T> {
                     }
                 });
             }
-        }) as ContextPromise<T>;
+        }) as Promise<T>;
     }
 
-    catch<TResult = never>(onRejected?: ((reason: any) => (PromiseLike<TResult> | TResult)) | undefined | null): ContextPromise<T | TResult> {
+    catch<TResult = never>(onRejected?: ((reason: any) => (PromiseLike<TResult> | TResult)) | undefined | null): Promise<T | TResult> {
         const NextConstructor = this.#nextConstructor();
         onRejected ??= (reason: any) => NextConstructor.reject(reason);
         return new NextConstructor<T | TResult>((resolve, reject) => {
@@ -233,13 +233,13 @@ export class ContextPromise<T> implements PromiseLike<T> {
             } else if ('fulfilled' === this.#status) {
                 resolve(this.#value);
             }
-        }) as ContextPromise<T | TResult>;
+        }) as Promise<T | TResult>;
     }
 
     then<TResult1 = T, TResult2 = never>(
         onFulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
         onRejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null
-    ): ContextPromise<TResult1 | TResult2> {
+    ): Promise<TResult1 | TResult2> {
         const NextConstructor = this.#nextConstructor();
         onRejected ??= (reason: any) => NextConstructor.reject(reason);
         onFulfilled ??= (value: T): TResult1 | PromiseLike<TResult1> => value as any;
@@ -276,7 +276,7 @@ export class ContextPromise<T> implements PromiseLike<T> {
                     }
                 });
             }
-        }) as ContextPromise<TResult1 | TResult2>;
+        }) as Promise<TResult1 | TResult2>;
     }
 
     static #isPromiseLike<T>(value: any): value is PromiseLike<T> {
@@ -284,6 +284,6 @@ export class ContextPromise<T> implements PromiseLike<T> {
     }
 
     #nextConstructor(): PromiseConstructor {
-        return (this.constructor as any)[Symbol.species] ?? ContextPromise;
+        return (this.constructor as any)[Symbol.species] ?? Promise;
     }
 }
