@@ -6,34 +6,34 @@ export class ContextPromise<T> implements PromiseLike<T> {
         return this;
     }
 
-    static reject<T = never>(_reason?: any): Promise<T> {
+    static reject<T = never>(_reason?: any): ContextPromise<T> {
         throw new Error('Not yet implemented');
     }
 
-    static resolve(): Promise<void>;
-    static resolve<T>(value: T): Promise<Awaited<T>>;
-    static resolve<T>(value: T | PromiseLike<T>): Promise<Awaited<T>>;
-    static resolve(_value?: any): Promise<any> {
+    static resolve(): ContextPromise<void>;
+    static resolve<T>(value: T): ContextPromise<Awaited<T>>;
+    static resolve<T>(value: T | PromiseLike<T>): ContextPromise<Awaited<T>>;
+    static resolve(_value?: any): ContextPromise<any> {
         throw new Error('Not yet implemented');
     }
 
-    static all<T extends readonly unknown[] | []>(_values: T): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+    static all<T extends readonly unknown[] | []>(_values: T): ContextPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
         throw new Error('Not yet implemented');
     }
 
-    static any<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>>;
-    static any<T>(values: Iterable<T | PromiseLike<T>>): Promise<Awaited<T>>;
-    static any(_values: any): Promise<any> {
+    static any<T extends readonly unknown[] | []>(values: T): ContextPromise<Awaited<T[number]>>;
+    static any<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<Awaited<T>>;
+    static any(_values: any): ContextPromise<any> {
         throw new Error('Not yet implemented');
     }
 
-    static race<T extends readonly unknown[] | []>(_values: T): Promise<Awaited<T[number]>> {
+    static race<T extends readonly unknown[] | []>(_values: T): ContextPromise<Awaited<T[number]>> {
         throw new Error('Not yet implemented');
     }
 
-    static allSettled<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
-    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): Promise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(_values: any): Promise<PromiseSettledResult<any>[]> {
+    static allSettled<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>> }>;
+    static allSettled<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<PromiseSettledResult<Awaited<T>>[]>;
+    static allSettled(_values: any): ContextPromise<PromiseSettledResult<any>[]> {
         throw new Error('Not yet implemented');
     }
 
@@ -51,7 +51,7 @@ export class ContextPromise<T> implements PromiseLike<T> {
 
     then<TResult1 = T, TResult2 = never>(
         _onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
-        _onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): Promise<TResult1 | TResult2> {
+        _onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): ContextPromise<TResult1 | TResult2> {
         throw new Error('Not yet implemented');
     }
 }
