@@ -1,49 +1,53 @@
+import {Context} from ".";
+
 export class Promise<T> implements PromiseLike<T> {
-    #resolve = (value: T | PromiseLike<T>) => {
-        this.#resolve = () => undefined;
-        this.#reject = () => undefined;
+    #resolve = (value: T | PromiseLike<T>, context?: Context) => {
+        [this.#resolve, this.#reject, this.#context] = [() => undefined, () => undefined, context ?? this.#context];
 
         if (Promise.#isPromiseLike<T>(value)) {
-            value.then(value => {
-                [this.#status, this.#value] = ['fulfilled', value];
+            value.then((value, context?: Context) => {
+                [this.#context, this.#status, this.#value] = [context ?? this.#context, 'fulfilled', value];
                 setTimeout(listeners => {
-                    listeners.forEach(listener => listener(value))
+                    listeners.forEach(listener => listener(value, this.#context));
                 }, 0, this.#fulfillmentListeners);
                 [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
-            }, reason => {
-                [this.#status, this.#reason] = ['rejected', reason];
+            }, (reason, context?: Context) => {
+                [this.#context, this.#status, this.#reason] = [context ?? this.#context, 'rejected', reason];
                 setTimeout(listeners => {
-                    listeners.forEach(listener => listener(reason))
+                    listeners.forEach(listener => listener(reason, this.#context));
                 }, 0, this.#rejectionListeners);
                 [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
             })
         } else {
             [this.#status, this.#value] = ['fulfilled', value];
-            this.#fulfillmentListeners.forEach(listener => listener(value));
             setTimeout(listeners => {
-                listeners.forEach(listener => listener(value))
+                listeners.forEach(listener => listener(value, this.#context));
             }, 0, this.#fulfillmentListeners);
             [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
         }
     };
-    #reject = (reason?: any) => {
-        [this.#resolve, this.#reject, this.#status, this.#reason] = [() => void 0, () => void 0, 'rejected', reason];
+    #reject = (reason?: any, context?: Context) => {
+        [this.#context, this.#status, this.#reason] = [context ?? this.#context, 'rejected', reason];
+        [this.#resolve, this.#reject] = [() => undefined, () => undefined];
         setTimeout(listeners => {
-            listeners.forEach(listener => listener(reason))
+            listeners.forEach(listener => listener(reason, this.#context));
         }, 0, this.#rejectionListeners);
         [this.#fulfillmentListeners, this.#rejectionListeners] = [[], []];
     };
     #status: 'pending' | 'rejected' | 'fulfilled' = 'pending';
-    #rejectionListeners: { (reason: any): any }[] = [];
-    #fulfillmentListeners: { (value: T): any }[] = [];
+    #rejectionListeners: { (reason: any, context?: Context): any }[] = [];
+    #fulfillmentListeners: { (value: T, context?: Context): any }[] = [];
+    #context?: Context | undefined = undefined;
     #reason: any = undefined as any;
     #value: T = undefined as any;
 
-    constructor(executor: Promise.Executor<T>) {
+    constructor(executor: Promise.Executor<T>, context?: Context) {
         try {
-            executor(value => this.#resolve(value), reason => this.#reject(reason));
+            this.#context = context;
+            executor((value, context) => this.#resolve(value, context ?? this.#context),
+                (reason, context) => this.#reject(reason, context ?? this.#context));
         } catch (error) {
-            this.#reject(error);
+            this.#reject(error, this.#context);
         }
     }
 
@@ -51,18 +55,19 @@ export class Promise<T> implements PromiseLike<T> {
         return this;
     }
 
-    static reject<T = never>(reason?: any): Promise<T> {
-        return new this((_resolve, reject) => reject(reason));
+    static reject<T = never>(reason?: any, context?: Context): Promise<T> {
+        return new this((_resolve, reject) => reject(reason, context));
     }
 
     static resolve(): Promise<void>;
-    static resolve<T>(value: T): Promise<Awaited<T>>;
-    static resolve<T>(value: T | PromiseLike<T>): Promise<Awaited<T>>;
-    static resolve<T>(value?: T | PromiseLike<T>): Promise<void | Awaited<T>> {
-        return new this(resolve => resolve(value as any));
+    static resolve<T>(value: T, context?: Context): Promise<Awaited<T>>;
+    static resolve<T>(value: T | PromiseLike<T>, context?: Context): Promise<Awaited<T>>;
+    static resolve<T>(value?: T | PromiseLike<T>, context?: Context): Promise<void | Awaited<T>> {
+        return new this(resolve => resolve(value as any, context));
     }
 
-    static all<T extends readonly unknown[] | []>(values: T): Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+    static all<T extends readonly unknown[] | []>(values: T, context?: Context):
+        Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
         return new this((resolve, reject) => {
             const fulfillment = new Map<unknown, unknown>();
 
@@ -72,26 +77,26 @@ export class Promise<T> implements PromiseLike<T> {
                         fulfillment.set(value, resolved);
 
                         if (fulfillment.size === new Set(values).size) {
-                            resolve(values.map(value => fulfillment.get(value)) as any);
+                            resolve(values.map(value => fulfillment.get(value)) as any, context);
                         }
-                    }, reject);
+                    }, reason => reject(reason, context));
                 } else {
                     fulfillment.set(value, value);
                 }
             }
 
             if (fulfillment.size === new Set(values).size) {
-                resolve(values.map(value => fulfillment.get(value)) as any);
+                resolve(values.map(value => fulfillment.get(value)) as any, context);
             }
         });
     }
 
-    static any<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>>;
-    static any<T>(values: Iterable<T | PromiseLike<T>>): Promise<Awaited<T>>;
-    static any(values: Iterable<any>): Promise<any> {
+    static any<T extends readonly unknown[] | []>(values: T, context?: Context): Promise<Awaited<T[number]>>;
+    static any<T>(values: Iterable<T | PromiseLike<T>>, context?: Context): Promise<Awaited<T>>;
+    static any(values: Iterable<any>, context?: Context): Promise<any> {
         return new this((resolve, reject) => {
             if (0 === [...values].length) {
-                return reject(new AggregateError([], 'All promises were rejected'));
+                return reject(new AggregateError([], 'All promises were rejected'), context);
             }
 
             const rejections = new Map<unknown, unknown>();
@@ -103,33 +108,35 @@ export class Promise<T> implements PromiseLike<T> {
 
                         if (rejections.size === new Set(values).size) {
                             const errors = [...values].map(value => rejections.get(value));
-                            reject(new AggregateError(errors, 'All promises were rejected'));
+                            reject(new AggregateError(errors, 'All promises were rejected'), context);
                         }
                     });
                 } else {
-                    resolve(value);
+                    resolve(value, context);
                 }
             }
         });
     }
 
-    static race<T extends readonly unknown[] | []>(values: T): Promise<Awaited<T[number]>> {
+    static race<T extends readonly unknown[] | []>(values: T, context?: Context): Promise<Awaited<T[number]>> {
         return new this((resolve, reject) => {
             for (const value of values) {
                 if (this.#isPromiseLike(value)) {
-                    value.then(resolve as any, reject)
+                    // value.then(resolve as any, reject)
+                    value.then((value: any, ctx?: Context) => resolve(value, ctx ?? context),
+                        (reason: any, ctx?: Context) => reject(reason, ctx ?? context))
                 } else {
-                    resolve(value as any);
+                    resolve(value as any, context);
                 }
             }
         });
     }
 
-    static allSettled<T extends readonly unknown[] | []>(values: T):
+    static allSettled<T extends readonly unknown[] | []>(values: T, context?: Context):
         Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>>; }>;
-    static allSettled<T>(values: Iterable<T | PromiseLike<T>>):
+    static allSettled<T>(values: Iterable<T | PromiseLike<T>>, context?: Context):
         Promise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(values: Iterable<any>): Promise<PromiseSettledResult<unknown>[]> {
+    static allSettled(values: Iterable<any>, context?: Context): Promise<PromiseSettledResult<unknown>[]> {
         return new this(resolve => {
             const settlements = new Map<unknown, PromiseSettledResult<unknown>>();
 
@@ -139,13 +146,13 @@ export class Promise<T> implements PromiseLike<T> {
                         settlements.set(value, {value: resolved, status: 'fulfilled'});
 
                         if (settlements.size === new Set(values).size) {
-                            resolve([...values].map(value => settlements.get(value)!));
+                            resolve([...values].map(value => settlements.get(value)!), context);
                         }
                     }, reason => {
                         settlements.set(value, {reason, status: 'rejected'});
 
                         if (settlements.size === new Set(values).size) {
-                            resolve([...values].map(value => settlements.get(value)!));
+                            resolve([...values].map(value => settlements.get(value)!), context);
                         }
                     });
                 } else {
@@ -154,7 +161,7 @@ export class Promise<T> implements PromiseLike<T> {
             }
 
             if (settlements.size === new Set(values).size) {
-                resolve([...values].map(value => settlements.get(value)!));
+                resolve([...values].map(value => settlements.get(value)!), context);
             }
         });
     }
@@ -167,14 +174,16 @@ export class Promise<T> implements PromiseLike<T> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<T>((resolve, reject) => {
             if ('pending' === this.#status) {
-                this.#fulfillmentListeners.push(value =>
-                    Promise.#onFinally(onFinally, resolve, reject, {value}));
-                this.#rejectionListeners.push(reason =>
-                    Promise.#onFinally(onFinally, resolve, reject, {reason}));
+                this.#fulfillmentListeners.push((value, context) =>
+                    Promise.#onFinally(onFinally, resolve, reject, {value}, context));
+                this.#rejectionListeners.push((reason, context) =>
+                    Promise.#onFinally(onFinally, resolve, reject, {reason}, context));
             } else if ('rejected' === this.#status) {
-                setTimeout(() => Promise.#onFinally(onFinally, resolve, reject, {reason: this.#reason}));
+                setTimeout(() =>
+                    Promise.#onFinally(onFinally, resolve, reject, {reason: this.#reason}, this.#context));
             } else if ('fulfilled' === this.#status) {
-                setTimeout(() => Promise.#onFinally(onFinally, resolve, reject, {value: this.#value}));
+                setTimeout(() =>
+                    Promise.#onFinally(onFinally, resolve, reject, {value: this.#value}, this.#context));
             }
         }) as Promise<T>;
     }
@@ -183,11 +192,14 @@ export class Promise<T> implements PromiseLike<T> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<T | R>((resolve, reject) => {
             if ('pending' === this.#status) {
-                this.#rejectionListeners.push(reason => Promise.#onRejected(onRejected, resolve, reject, reason));
+                this.#rejectionListeners.push((reason, context) =>
+                    Promise.#onRejected(onRejected, resolve, reject, reason, context ?? context));
             } else if ('rejected' === this.#status) {
-                setTimeout(() => Promise.#onRejected(onRejected, resolve, reject, this.#reason));
+                setTimeout(() =>
+                    Promise.#onRejected(onRejected, resolve, reject, this.#reason, this.#context));
             } else if ('fulfilled' === this.#status) {
-                resolve(this.#value);
+                setTimeout(() =>
+                    Promise.#onFulfilled(null, resolve, reject, this.#value, this.#context));
             }
         }) as Promise<T | R>;
     }
@@ -196,12 +208,14 @@ export class Promise<T> implements PromiseLike<T> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<F | R>((resolve, reject) => {
             if ('pending' === this.#status) {
-                this.#fulfillmentListeners.push(value => Promise.#onFulfilled(onFulfilled, resolve, reject, value));
-                this.#rejectionListeners.push(reason => Promise.#onRejected(onRejected, resolve, reject, reason));
+                this.#fulfillmentListeners.push((value, context) =>
+                    Promise.#onFulfilled(onFulfilled, resolve, reject, value, context ?? this.#context));
+                this.#rejectionListeners.push((reason, context) =>
+                    Promise.#onRejected(onRejected, resolve, reject, reason, context ?? this.#context));
             } else if ('rejected' === this.#status) {
-                setTimeout(() => Promise.#onRejected(onRejected, resolve, reject, this.#reason));
+                setTimeout(() => Promise.#onRejected(onRejected, resolve, reject, this.#reason, this.#context));
             } else if ('fulfilled' === this.#status) {
-                setTimeout(() => Promise.#onFulfilled(onFulfilled, resolve, reject, this.#value));
+                setTimeout(() => Promise.#onFulfilled(onFulfilled, resolve, reject, this.#value, this.#context));
             }
         }) as Promise<F | R>;
     }
@@ -211,38 +225,40 @@ export class Promise<T> implements PromiseLike<T> {
     }
 
     static #onFulfilled<F>(onFulfilled: Promise.OnFulfilled<any, F>,
-                           resolve: Promise.Resolve<F>, reject: Promise.Reject, value: any): void {
+                           resolve: Promise.Resolve<F>, reject: Promise.Reject,
+                           value: any, context?: Context): void {
         if (onFulfilled) {
             try {
-                resolve(onFulfilled(value) as any);
+                resolve(onFulfilled(value, context) as any, context);
             } catch (error) {
-                reject(error);
+                reject(error, context);
             }
         } else {
-            resolve(value);
+            resolve(value, context);
         }
     }
 
     static #onRejected<R = never>(onRejected: Promise.OnRejected<R>,
-                                  resolve: Promise.Resolve<R>, reject: Promise.Reject, reason: any): void {
+                                  resolve: Promise.Resolve<R>, reject: Promise.Reject,
+                                  reason: any, context?: Context): void {
         if (onRejected) {
             try {
-                resolve(onRejected(reason) as any);
+                resolve(onRejected(reason, context) as any, context);
             } catch (error) {
-                reject(error);
+                reject(error, context);
             }
         } else {
-            reject(reason);
+            reject(reason, context);
         }
     }
 
     static #onFinally(onFinally: Promise.OnFinally, resolve: Promise.Resolve<any>, reject: Promise.Reject,
-                      content: { value: any } | { reason: any }): void {
+                      content: { value: any } | { reason: any }, context?: Context): void {
         try {
-            onFinally?.();
-            'value' in content ? resolve(content.value) : reject(content.reason);
+            onFinally?.(context);
+            'value' in content ? resolve(content.value, context) : reject(content.reason, context);
         } catch (error) {
-            reject(error);
+            reject(error, context);
         }
     }
 
@@ -253,22 +269,22 @@ export class Promise<T> implements PromiseLike<T> {
 
 export namespace Promise {
     export type OnFulfilled<T, F> = {
-        (value: T): PromiseLike<F> | F;
+        (value: T, context?: Context | undefined): PromiseLike<F> | F;
     } | undefined | null;
     export type OnRejected<R> = {
-        (reason: any): PromiseLike<R> | R;
+        (reason: any, context?: Context | undefined): PromiseLike<R> | R;
     } | undefined | null;
     export type OnFinally = {
-        (): void;
+        (context?: Context | undefined): void;
     } | undefined | null;
 
     export type Executor<T> = {
-        (resolve: Promise.Resolve<T>, reject: Promise.Reject): void;
+        (resolve: Promise.Resolve<T>, reject: Promise.Reject, context?: Context): void;
     }
     export type Resolve<T> = {
-        (value: T | PromiseLike<T>): void;
+        (value: T | PromiseLike<T>, context?: Context): void;
     }
     export type Reject = {
-        (reason?: any): void;
+        (reason?: any, context?: Context): void;
     }
 }
