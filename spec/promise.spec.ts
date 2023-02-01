@@ -536,16 +536,37 @@ describe('Promise', () => {
     });
 
     describe('::allSettled( sources )', () => {
-        it('noop', () => {
+        it('resolve when all sources settle, with an aggregate', async () => {
+            await expect(TestedPromise.allSettled([
+                TestedPromise.reject(-1),
+                0,
+                TestedPromise.resolve(1),
+            ])).resolves.toEqual([
+                {status: 'rejected', reason: -1},
+                {status: 'fulfilled', value: 0},
+                {status: 'fulfilled', value: 1},
+            ]);
+            await expect(TestedPromise.allSettled([]))
+                .resolves.toEqual([]);
+        });
+
+        it('never settle if some sources never settle', async () => {
+            const onFinally = fn();
+            TestedPromise.allSettled([TestedPromise.race([])]).finally(onFinally);
+            await new TestedPromise(res => setTimeout(res, 10, 1));
+            expect(onFinally).not.toHaveBeenCalled();
         });
     });
 });
-
-// declare function setTimeout(code: (...args: any[]) => void, delayMilliseconds?: number, ...parameters: any[]): number;
 
 const cached: {
     silenced(): void;
     promise?: PromiseLike<any>;
     <P extends PromiseLike<any>>(promise: P): P;
+    andSilencedAtOnce<P extends PromiseLike<any>>(promise: P): P;
 } = <P extends PromiseLike<any>>(promise: P) => cached.promise = promise;
+cached.andSilencedAtOnce = <P extends PromiseLike<any>>(promise: P): P => {
+    cached(promise).then(null, _ => _);
+    return promise;
+}
 cached.silenced = () => cached.promise?.then(null, _ => _);
