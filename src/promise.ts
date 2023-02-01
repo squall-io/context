@@ -94,6 +94,10 @@ export class ContextPromise<T> implements PromiseLike<T> {
     static any<T>(values: Iterable<T | PromiseLike<T>>): ContextPromise<Awaited<T>>;
     static any(values: Iterable<any>): ContextPromise<any> {
         return new this((resolve, reject) => {
+            if (0 === [...values].length) {
+                return reject(new AggregateError([], 'All promises were rejected'));
+            }
+
             const rejections = new Map<unknown, unknown>();
 
             for (const value of values) {
@@ -102,7 +106,8 @@ export class ContextPromise<T> implements PromiseLike<T> {
                         rejections.set(value, reason);
 
                         if (rejections.size === new Set(values).size) {
-                            reject([...values].map(value => rejections.get(value)));
+                            const errors = [...values].map(value => rejections.get(value));
+                            reject(new AggregateError(errors, 'All promises were rejected'));
                         }
                     });
                 } else {
