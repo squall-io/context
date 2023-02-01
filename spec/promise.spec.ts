@@ -38,6 +38,13 @@ describe('Promise', () => {
                 thrown instanceof TypeError &&
                 expect(thrown.message).toBe('Promise resolver [object Array] is not a function') || true);
         });
+
+        it('result in a reject promise when executor throw error', async () => {
+            const error = new Error('AAA');
+            // @formatter:off
+            await expect(new TestedPromise(() => { throw error; })).rejects.toBe(error);
+            // @formatter:on
+        });
     });
 
     describe('.then( onResolved?, onRejected? )', () => {
