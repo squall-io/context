@@ -66,8 +66,28 @@ export class ContextPromise<T> implements PromiseLike<T> {
         return new this(resolve => resolve(value as any));
     }
 
-    static all<T extends readonly unknown[] | []>(_values: T): ContextPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
-        throw new Error('Not yet implemented');
+    static all<T extends readonly unknown[] | []>(values: T): ContextPromise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+        return new this((resolve, reject) => {
+            const fulfillment = new Map<unknown, unknown>();
+
+            for (const value of values) {
+                if (this.#isPromiseLike(value)) {
+                    value.then(resolved => {
+                        fulfillment.set(value, resolved);
+
+                        if (fulfillment.size === new Set(values).size) {
+                            resolve(values.map(value => fulfillment.get(value)) as any);
+                        }
+                    }, reject);
+                } else {
+                    fulfillment.set(value, value);
+                }
+            }
+
+            if (fulfillment.size === new Set(values).size) {
+                resolve(values.map(value => fulfillment.get(value)) as any);
+            }
+        });
     }
 
     static any<T extends readonly unknown[] | []>(values: T): ContextPromise<Awaited<T[number]>>;
