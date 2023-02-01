@@ -116,7 +116,7 @@ export class ContextPromise<T> implements PromiseLike<T> {
                     }
                 });
             } else if ('fulfilled' === this.#status) {
-                return resolve(this.#value);
+                resolve(this.#value);
             }
             const listener = (reason: any) => setTimeout(onRejected!, 0, reason);
             this.#rejectionListeners.push(listener)
@@ -124,9 +124,48 @@ export class ContextPromise<T> implements PromiseLike<T> {
     }
 
     then<TResult1 = T, TResult2 = never>(
-        _onfulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
-        _onrejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null): ContextPromise<TResult1 | TResult2> {
-        throw new Error('Not yet implemented');
+        onFulfilled?: ((value: T) => (PromiseLike<TResult1> | TResult1)) | undefined | null,
+        onRejected?: ((reason: any) => (PromiseLike<TResult2> | TResult2)) | undefined | null
+    ): ContextPromise<TResult1 | TResult2> {
+        const NextConstructor = this.#nextConstructor();
+        onRejected ??= (reason: any) => NextConstructor.reject(reason);
+        onFulfilled ??= (value: T): TResult1 | PromiseLike<TResult1> => value as any;
+        return new NextConstructor<TResult1 | TResult2>((resolve, reject) => {
+            if ('pending' === this.#status) {
+                this.#fulfillmentListeners.push(value => {
+                    try {
+                        resolve(onFulfilled!(value))
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+                this.#rejectionListeners.push(reason => {
+                    try {
+                        resolve(onRejected!(reason))
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            } else if ('rejected' === this.#status) {
+                setTimeout(() => {
+                    try {
+                        resolve(onRejected!(this.#reason))
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            } else if ('fulfilled' === this.#status) {
+                setTimeout(() => {
+                    try {
+                        resolve(onFulfilled!(this.#value))
+                    } catch (error) {
+                        reject(error);
+                    }
+                });
+            }
+            const listener = (reason: any) => setTimeout(onRejected!, 0, reason);
+            this.#rejectionListeners.push(listener)
+        }) as ContextPromise<TResult1 | TResult2>;
     }
 
     static #isPromiseLike<T>(value: any): value is PromiseLike<T> {
