@@ -1,5 +1,6 @@
 import {describe, expect, it, jest} from '@jest/globals';
 import {Context, Promise as ContextPromise} from "../src";
+import Mock = jest.Mock;
 
 const TestedPromise = ContextPromise;
 const {fn} = jest;
@@ -406,6 +407,93 @@ describe('Promise', () => {
                 expect(withoutContext).toHaveLength(1);
                 expect((withoutContext as any[])[0]).toBe(-1);
             }
+        });
+
+        it('return value passed to the thenable callback propagate as normal promises', async () => {
+            const context = new Context();
+            const error = new Error('???');
+            let onRejected: Mock<(...args: any[]) => any>;
+            let onFulfilled: Mock<(...args: any[]) => any>;
+            const resolvedWithoutContext = TestedPromise.resolve(1).context;
+            const rejectedWithoutContext = TestedPromise.reject(-1).context;
+            const resolvedWithContext = TestedPromise.resolve(1, context).context;
+            const rejectedWithContext = TestedPromise.reject(-1, context).context;
+
+            await resolvedWithoutContext
+                .then(_ => {
+                    throw error;
+                })
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, error);
+            await resolvedWithoutContext
+                .then(_ => 2)
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 2);
+            await resolvedWithoutContext
+                .then(_ => TestedPromise.reject(-1))
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, -1);
+            await resolvedWithoutContext
+                .then(_ => TestedPromise.resolve(2))
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 2);
+
+            await resolvedWithContext
+                .then(_ => {
+                    throw error;
+                })
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, error, context);
+            await resolvedWithContext
+                .then(_ => 2)
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 2, context);
+            await resolvedWithContext
+                .then(_ => TestedPromise.reject(-1))
+                .then(null, onRejected = fn());
+            expect(onRejected).nthCalledWith(1, -1, context);
+            await resolvedWithContext
+                .then(_ => TestedPromise.resolve(2))
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 2, context);
+
+            await rejectedWithoutContext
+                .then(null, _ => {
+                    throw error;
+                })
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, error);
+            await rejectedWithoutContext
+                .then(null, _ => 1)
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 1);
+            await rejectedWithoutContext
+                .then(null, _ => TestedPromise.reject(-2))
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, -2);
+            await rejectedWithoutContext
+                .then(null, _ => TestedPromise.resolve(1))
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 1);
+
+            await rejectedWithContext
+                .then(null, _ => {
+                    throw error;
+                })
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, error, context);
+            await rejectedWithContext
+                .then(null, _ => 1)
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 1, context);
+            await rejectedWithContext
+                .then(null, _ => TestedPromise.reject(-2))
+                .catch(onRejected = fn());
+            expect(onRejected).nthCalledWith(1, -2, context);
+            await rejectedWithContext
+                .then(null, _ => TestedPromise.resolve(1))
+                .then(onFulfilled = fn());
+            expect(onFulfilled).nthCalledWith(1, 1, context);
         });
     });
 
