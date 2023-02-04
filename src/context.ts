@@ -247,7 +247,7 @@ export class Context {
             .join('')
     }
 
-    static #isThenable(value: any): value is Promise<unknown> {
+    static #isThenable(value: any): value is PromiseLike<unknown> {
         return value && 'object' === typeof value   // Is object but not null
             && 'then' in value                      // Has a 'then' property
             && 'function' === typeof value['then']; // That property maps to a function
