@@ -170,6 +170,19 @@ export class Promise<T> implements PromiseLike<T> {
         return Promise.name;
     }
 
+    get context(): {
+        then<F = T, R = never>(onFulfilled?: Promise.OnFulfilledWithContext<T, F>,
+                               onRejected?: Promise.OnRejectedWithContext<R>): Promise<F | R>;
+    } {
+        return {
+            then: <F = T, R = never>(onFulfilled?: Promise.OnFulfilledWithContext<T, F>,
+                                     onRejected?: Promise.OnRejectedWithContext<R>) => this.then(
+                onFulfilled ? (...args) => onFulfilled(Array.from(args) as any) : onFulfilled as any,
+                onRejected ? (...args) => onRejected(Array.from(args) as any) : onRejected as any,
+            ),
+        };
+    }
+
     finally(onFinally?: Promise.OnFinally): Promise<T> {
         const NextConstructor = this.#nextConstructor();
         return new NextConstructor<T>((resolve, reject) => {
@@ -272,6 +285,15 @@ export class Promise<T> implements PromiseLike<T> {
 }
 
 export namespace Promise {
+    export type OnFulfilledWithContext<T, F> = {
+        (valueWithContext: Promise.ContextAwareValue<T>): PromiseLike<F> | F;
+    } | undefined | null;
+    export type OnRejectedWithContext<R> = {
+        (reasonWithContext: Promise.ContextAwareReason): PromiseLike<R> | R;
+    } | undefined | null;
+    export type ContextAwareReason = [reason: any, context?: Context];
+    export type ContextAwareValue<T> = [value: T, context?: Context];
+
     export type OnFulfilled<T, F> = {
         (value: T, context?: Context): PromiseLike<F> | F;
     } | undefined | null;

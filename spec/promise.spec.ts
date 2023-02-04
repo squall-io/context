@@ -363,6 +363,52 @@ describe('Promise', () => {
         });
     });
 
+    describe('get context()', () => {
+        it('resolve to a thenable', () => {
+            expect(new TestedPromise(_ => _).context).toBeInstanceOf(Object);
+            expect(new TestedPromise(_ => _).context).toHaveProperty('then');
+            expect(new TestedPromise(_ => _).context.then).toBeInstanceOf(Function);
+        });
+
+        it('resolve to a thenable that return a promise as well', () => {
+            expect(new TestedPromise(_ => _).context.then()).toBeInstanceOf(TestedPromise);
+        });
+
+        it('resolve to a thenable that resolves with a tuple: [value, context?]', async () => {
+            const context = new Context();
+            const withContext = await (TestedPromise.resolve(1, context).context);
+            expect(withContext).toHaveLength(2);
+            expect(withContext[0]).toBe(1);
+            expect(withContext[1]).toBe(context);
+
+            const withoutContext = await (TestedPromise.resolve(1).context);
+            expect(withoutContext).toHaveLength(1);
+            expect(withoutContext[0]).toBe(1);
+        });
+
+        it('resolve to a thenable that rejects with a tuple: [reason, context?]', async () => {
+            const context = new Context();
+            try {
+                await (TestedPromise.reject(-1, context).context);
+                // noinspection ExceptionCaughtLocallyJS
+                throw new Error('Should not get down here');
+            } catch (withContext) {
+                expect(withContext).toHaveLength(2);
+                expect((withContext as any[])[0]).toBe(-1);
+                expect((withContext as any[])[1]).toBe(context);
+            }
+
+            try {
+                await (TestedPromise.reject(-1).context);
+                // noinspection ExceptionCaughtLocallyJS
+                throw new Error('Should not get down here');
+            } catch (withoutContext) {
+                expect(withoutContext).toHaveLength(1);
+                expect((withoutContext as any[])[0]).toBe(-1);
+            }
+        });
+    });
+
     describe('::[@@species]', () => {
         class NewPromise<T> extends TestedPromise<T> {
         }
