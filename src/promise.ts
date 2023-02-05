@@ -133,30 +133,30 @@ export class Promise<T> implements PromiseLike<T> {
     }
 
     static allSettled<T extends readonly unknown[] | []>(values: T, context?: Context):
-        Promise<{ -readonly [P in keyof T]: PromiseSettledResult<Awaited<T[P]>>; }>;
+        Promise<{ -readonly [P in keyof T]: Promise.SettledResult<Awaited<T[P]>>; }>;
     static allSettled<T>(values: Iterable<T | PromiseLike<T>>, context?: Context):
-        Promise<PromiseSettledResult<Awaited<T>>[]>;
-    static allSettled(values: Iterable<any>, context?: Context): Promise<PromiseSettledResult<unknown>[]> {
+        Promise<Promise.SettledResult<Awaited<T>>[]>;
+    static allSettled(values: Iterable<any>, context?: Context): Promise<Promise.SettledResult<unknown>[]> {
         return new this(resolve => {
-            const settlements = new Map<unknown, PromiseSettledResult<unknown>>();
+            const settlements = new Map<unknown, Promise.SettledResult<unknown>>();
 
             for (const value of values) {
                 if (this.#isPromiseLike(value)) {
-                    value.then(resolved => {
-                        settlements.set(value, {value: resolved, status: 'fulfilled'});
+                    value.then((resolved, ctx?: Context) => {
+                        settlements.set(value, {value: resolved, status: 'fulfilled', context: ctx ?? context});
 
                         if (settlements.size === new Set(values).size) {
                             resolve([...values].map(value => settlements.get(value)!), context);
                         }
-                    }, reason => {
-                        settlements.set(value, {reason, status: 'rejected'});
+                    }, (reason, ctx?: Context) => {
+                        settlements.set(value, {reason, status: 'rejected', context: ctx ?? context});
 
                         if (settlements.size === new Set(values).size) {
                             resolve([...values].map(value => settlements.get(value)!), context);
                         }
                     });
                 } else {
-                    settlements.set(value, {value, status: 'fulfilled'});
+                    settlements.set(value, {value, status: 'fulfilled', context: context});
                 }
             }
 
@@ -313,4 +313,12 @@ export namespace Promise {
     export type Reject = {
         (reason?: any, context?: Context): void;
     }
+
+    export interface FulfilledResult<T> extends PromiseFulfilledResult<T> {
+        context?: Context | undefined | null;
+    }
+    export interface RejectedResult extends PromiseRejectedResult {
+        context?: Context | undefined | null;
+    }
+    export type SettledResult<T> = FulfilledResult<T> | RejectedResult;
 }
