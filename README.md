@@ -1,23 +1,51 @@
 @squall.io/context
 ===
 
-A CDI (Context and Dependency Injection) container, designed for reactive programming, in JavaScript/TypeScript.
+A CDI (Context and Dependency Injection) container, designed JavaScript asynchronicity.
 
-Functional programming is a large and strongly rooted paradigm. A few related concepts, sprout out of mathematics:
+JavaScript async is better known today through the `Promise` API and `RxJS`, best successors to callbacks' hell age.
+And they are best at what they do... Until they aren't: dependency injection, context and its propagation.
 
-+ [Correctness](https://en.wikipedia.org/wiki/Correctness_(computer_science))
-+ [Pure Function](https://en.wikipedia.org/wiki/Pure_function)
-+ [Formal verification](https://en.wikipedia.org/wiki/Formal_verification)
-+ [Formal proof](https://en.wikipedia.org/wiki/Formal_proof)
+```typescript
+// transfer.ts
+import { credit, debit } from './operations';
 
-And although JavaScript is a first-class functional programming language, it is designed at its core to be event-driven,
-and less reactive.
+const [debitMetadata, debitContext]  = await debit(sender, amount).context;
+// NOTE: we pass along the context, for transaction reuse
+const creditMetadata = await credit(recipient, amount, debitContext);
+```
 
-While there are good articles on the subjects, this library, built for both/any model, pretend to fit correctly in
-reactive model: think `Promise`, `RxJS` or more...
+Provided the following...
 
-> + Build targets ES2015 (with private members).
-> + Build targets major module systems in the ecosystem.
+```typescript
+// operations.ts
+import { CreditMetadata, DebitMetadata } from './model/metadata';
+import { Promise as ContextPromise } from '@squall.io/context';
+import { TRANSACTION_ID_TOKEN, start } from './transactional';
+import { Sender, Recipient } from './model/actors';
+
+export const debit = (sender: Sender, amount: number): ContextPromise<DebitMetadata> => { /* ... */ }
+
+export const credit = (recipient: Recipient, amount: number, ctx?: ContextPromise): ContextPromise<CreditMetadata> => {
+    let transactionId: string;
+    
+    try {
+        // If a transaction is started in the currrent context, re-use it.
+        // Also, if no context was given, just start a new transaction.
+        transactionId = ctx?.inject(TRANSACTION_ID_TOKEN) ?? start();
+    } catch (e) {
+        // If, for eg., no transaction was started and registered in the given context,
+        // we would get an error throw. And hence, need to start one
+        transactionId = start();
+    }
+    
+    ctx ??= new ContextPromise().provide(TRANSACTION_ID_TOKEN, transactionId);
+    
+    // Run the credit operation in transaction, reusing an existing one if possible
+    
+    return ContextPromise.resolve(creditMetadata, ctx);
+}
+```
 
 ## Table of Content
 
