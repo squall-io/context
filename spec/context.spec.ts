@@ -1,6 +1,7 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
-import {Context} from '../src';
+import {Context, Promise as ContextPromise} from '../src';
 import Mock = jest.Mock;
+import Token = Context.Token;
 
 const {fn} = jest;
 
@@ -2932,6 +2933,45 @@ describe('Context', () => {
             });
         });
     });
+
+    describe('when the injected bean is a promise', () => {
+        it('wrap it into the context-aware promise implementation', async () => {
+            const NUMBER_PROMISE: Token<PromiseLike<number>> = Symbol('NUMBER_PROMISE');
+            expect(new Context()
+                .provide(NUMBER_PROMISE, Promise.resolve(1))
+                .inject(NUMBER_PROMISE)
+            ).toBeInstanceOf(ContextPromise);
+        });
+
+        it('wrap it into the context-aware promise with type support', async () => {
+            type T = Token<PromiseLike<number>>;
+            class Bench extends ContextPromise<number> {
+                sitsCount?: number;
+            }
+
+            let [token, context, onRejected, onFulfilled] = ['token' as T, new Context(), fn(), fn()];
+            await expect(context
+                .provide(token, async () => 1)
+                .inject(token)).resolves.toBe(1);
+
+            [token, context, onRejected, onFulfilled] = [Bench, new Context(), fn(), fn()];
+            await context
+                .provide(token, new Bench(res => res(2)))
+                .inject(token)
+                .then(onFulfilled, onRejected);
+            expect(onFulfilled).nthCalledWith(1, 2, context);
+            expect(onRejected).not.toHaveBeenCalled();
+
+            [token, context, onRejected, onFulfilled] = [Symbol('REPLICAS_COUNT'), new Context(), fn(), fn()];
+            await context
+                .provide(token, ContextPromise.resolve(3))
+                .inject(token)
+                .then(onFulfilled, onRejected);
+            expect(onFulfilled).nthCalledWith(1, 3, context);
+            expect(onRejected).not.toHaveBeenCalled();
+
+        });
+    })
 
     describe('bug fix', () => {
         it('do not resolve value WHEN injecting with forceEvaluation === true and it was provided with a factory', () => {

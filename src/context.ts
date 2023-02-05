@@ -1,3 +1,5 @@
+import {Promise as ContextPromise} from ".";
+
 export class Context {
     static readonly #DEFAULT_QUALIFIER = Symbol('DEFAULT_QUALIFIER');
     static readonly ERR_NO_BEAN_DEFINITION = 'NO_BEAN_DEFINITION';
@@ -68,7 +70,7 @@ export class Context {
         const IS_EAGER_VALIDATION = !this.#configuration.factory.lazyValidation;
         const SHOULD_VALIDATE = Context.#isThenable(value)
             || (IS_EAGER_VALIDATION && (!factory || IS_EAGER_FACTORY_EVALUATION));
-        value = SHOULD_VALIDATE ? Context.#validValue(value, token, qualifiers[0]!) : value;
+        value = SHOULD_VALIDATE ? Context.#validValue(value, token, qualifiers[0]!, this) : value;
 
         if (factory) {
             for (const qualifier of qualifiers) {
@@ -118,7 +120,7 @@ export class Context {
                         ? (definition as any)['value']
                         : (definition as any)['factory']?.(context, token,
                             ...Context.#DEFAULT_QUALIFIER === qualifier ? [] : [qualifier]),
-                token, qualifier);
+                token, qualifier, this);
 
             if (!('value' in definition)) {
                 this.#dependencies
@@ -222,7 +224,7 @@ export class Context {
             this.#parents.some(parent => parent.#has(token, qualifier));
     }
 
-    static #validValue<T>(value: T, token: Context.Token<any>, qualifier: string | symbol): T {
+    static #validValue<T>(value: T, token: Context.Token<any>, qualifier: string | symbol, context: Context): T {
         if (this.#isEmpty(value)) {
             const suffix = Context.#DEFAULT_QUALIFIER === qualifier
                 ? '' : Context.#format(' Qualifier<{0}>', qualifier);
@@ -232,7 +234,11 @@ export class Context {
         }
 
         if (this.#isThenable(value)) {
-            return value.then(value => this.#validValue(value, token, qualifier)) as T;
+            return new ContextPromise((resolve, reject) => value
+                .then(value => resolve(this.#validValue(value, token, qualifier, context), context),
+                    reason => reject(reason, context))
+                .then(null, reason => reject(reason, context))
+            ) as T;
         }
 
         return value;
@@ -278,10 +284,18 @@ export namespace Context {
             : T extends string ? Factory<unknown>
                 : never;
 
-    export type Value<T extends Token<any>> = T extends TokenSymbol<infer I> ? I
-        : T extends Constructor<infer I> ? I
-            : T extends string ? unknown
-                : never;
+    export type Value<T extends Token<any>> =
+        T extends TokenSymbol<infer TS>
+            ? TS extends PromiseLike<infer TS_PL>
+                ? ContextPromise<TS_PL>
+                : TS
+            : T extends Constructor<infer T_C>
+                ? T_C extends PromiseLike<infer T_C_PL>
+                    ? ContextPromise<T_C_PL>
+                    : T_C
+                : T extends string
+                    ? unknown
+                    : never;
 
     export type Token<T> = string | TokenSymbol<T> | Constructor<T>;
 
