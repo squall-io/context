@@ -22,19 +22,31 @@ reactive model: think `Promise`, `RxJS` or more...
 ## Table of Content
 
 + [Getting Started](#getting-started)
-  + [License](#license)
-  + [Usage](#usage)
+    + [License](#license)
+    + [Usage](#usage)
 + [API Documentation](#api-documentation)
-  + [Context](#context)
-    + [Context Constructors](#context-constructor)
-    + [Context.provide](#context.provide)
-    + [Context.inject](#context.inject)
-    + [Context.hasOwn](#context.hasOwn)
-    + [Context.has](#context.has)
-+ [Contribution](#contribution) 
-  + [Guidelines](#guidelines)
-  + [Contributors](#contributors)
-  + [Upcoming](#upcoming)
+    + [Context](#context)
+        + [Context Constructors](#context-constructor)
+        + [Context.provide](#context.provide)
+        + [Context.inject](#context.inject)
+        + [Context.hasOwn](#context.hasOwn)
+        + [Context.has](#context.has)
+    + [Promise](#promise)
+        + [Promise Constructor](#promise-constructor)
+        + [Promise.finally](#promisefinally)
+        + [Promise.catch](#promisecatch)
+        + [Promise.then](#promisethen)
+        + [Promise.context](#promisecontext)
+        + [Promise::allSettled](#promiseallsettled)
+        + [Promise::resolve](#promiseresolve)
+        + [Promise::reject](#promisereject)
+        + [Promise::race](#promiserace)
+        + [Promise::all](#promiseall)
+        + [Promise::any](#promiseany)
++ [Contribution](#contribution)
+    + [Guidelines](#guidelines)
+    + [Contributors](#contributors)
+    + [Upcoming](#upcoming)
 
 ## Getting Started
 
@@ -51,7 +63,7 @@ yarn add @squall.io/context --save
 
 ```typescript
 // typescript
-import { Context } from '@squall.io/context'; // <<< ES2015-compliant import 
+import {Context} from '@squall.io/context'; // <<< ES2015-compliant import 
 // Consider '@squall.io/context/commonjs', '@squall.io/context/systemjs',
 // '@squall.io/context/es2015', '@squall.io/context/amd'
 // '@squall.io/context/umd'
@@ -202,61 +214,68 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 + `context.provide(token: string, factory: Context.Factory<unknown>): this`
   <br/>
   Provide a bean definition mapped to a `token`, using the default qualifier.
-  + **returns**
-    + the context on which the `provide` method was called on.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY`, when a bean definition with the given `token`
-      already exists in this context, under the default qualifier.
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value and the
-      context's `configuration.factory.lazyValidation === false`.
-      > With `configuration.factory.lazyValidation === false`, this error is:
-      > + thrown if the resolved bean is empty;
-      > + not thrown if the resolved bean is a `Promise`;
-      > + not thrown if `configuration.factory.lazyFunctionEvaluation === true`.
+    + **returns**
+        + the context on which the `provide` method was called on.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY`, when a bean definition with the given `token`
+          already exists in this context, under the default qualifier.
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value and
+          the
+          context's `configuration.factory.lazyValidation === false`.
+          > With `configuration.factory.lazyValidation === false`, this error is:
+          > + thrown if the resolved bean is empty;
+          > + not thrown if the resolved bean is a `Promise`;
+          > + not thrown if `configuration.factory.lazyFunctionEvaluation === true`.
 + `context.provide(token: string, qualifiers: string|string[], factory: Context.Factory<unknown>): this`
   <br/>
   Provide a bean definition mapped to a `token`, using the `qualifier/s` provided.
-  + **returns**
-    + the context on which the `provide` method was called on.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token` already
-      exists in this context, under any of the provided `qualifier/s`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value and the
-      context's `configuration.factory.lazyValidation === false`.
-      > With `configuration.factory.lazyValidation === false`, this error is:
-      > + thrown if the resolved bean is empty;
-      > + not thrown if the resolved bean is a `Promise`;
-      > + not thrown if `configuration.factory.lazyFunctionEvaluation === true`.
+    + **returns**
+        + the context on which the `provide` method was called on.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token`
+          already
+          exists in this context, under any of the provided `qualifier/s`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value and
+          the
+          context's `configuration.factory.lazyValidation === false`.
+          > With `configuration.factory.lazyValidation === false`, this error is:
+          > + thrown if the resolved bean is empty;
+          > + not thrown if the resolved bean is a `Promise`;
+          > + not thrown if `configuration.factory.lazyFunctionEvaluation === true`.
 + `context.provide<TK extends Token<any>>(token: TK, beanDefinition: T | Context.Factory<T>): this`
   <br/>
   Provide a bean definition mapped to a `token`, using the default qualifier.
-  + **returns**
-    + the context on which the `provide` method was called on.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token` already
-      exists in this context, under default qualifier;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value, and the
-      context's `configuration.factory.lazyValidation === false`.
-      > With `configuration.factory.lazyValidation === false`, this error is:
-      > + thrown if the resolved bean is empty;
-      > + not thrown if the resolved bean is a `Promise`;
-      > + not thrown if the bean definition is a `Context.Factory<?>` and
-      >   `configuration.factory.lazyFunctionEvaluation === true`.
+    + **returns**
+        + the context on which the `provide` method was called on.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token`
+          already
+          exists in this context, under default qualifier;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty value, and
+          the
+          context's `configuration.factory.lazyValidation === false`.
+          > With `configuration.factory.lazyValidation === false`, this error is:
+          > + thrown if the resolved bean is empty;
+          > + not thrown if the resolved bean is a `Promise`;
+          > + not thrown if the bean definition is a `Context.Factory<?>` and
+              >   `configuration.factory.lazyFunctionEvaluation === true`.
 + `context.provide<TK extends Token<any>>(token: TK, qualifiers: string|string[], beanDefinition: T | Context.Factory<T>): this`
   <br/>
   Provide a bean definition mapped to a `token`, using the `qualifier/s` provided.
-  + **returns**
-    + the context on which the `provide` method was called on.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token` already
-      exists in this context, under any of the provided `qualifier/s`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolve to an empty value and the
-      context's `configuration.factory.lazyValidation === `false`.
-      > With `configuration.factory.lazyValidation === false`, this error is:
-      > + thrown if the resolved value is empty;
-      > + not thrown if the resolved value is a `Promise`;
-      > + not thrown if the bean definition is `Context.Factory<?>` and
-      >   `configuration.factory.lazyFunctionEvaluation === true`.
+    + **returns**
+        + the context on which the `provide` method was called on.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY` when a bean definition with the given `token`
+          already
+          exists in this context, under any of the provided `qualifier/s`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolve to an empty value and
+          the
+          context's `configuration.factory.lazyValidation === `false`.
+          > With `configuration.factory.lazyValidation === false`, this error is:
+          > + thrown if the resolved value is empty;
+          > + not thrown if the resolved value is a `Promise`;
+          > + not thrown if the bean definition is `Context.Factory<?>` and
+              >   `configuration.factory.lazyFunctionEvaluation === true`.
 
 #### Context.inject
 
@@ -267,117 +286,264 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 > When injecting a no-args constructor (i.e. `0 === constructor.length`), if that class is not [yet] a token in that
 > context, will result in that context registering a definition of it under that class, under the given qualifier (or
 > the default qualifier). An instance is created immediately without parameters.
-> 
+>
 > All the other rules apply eagerly since things couldn't be later: validation, caching, calls without qualifier bean
 > resolution.
 
 + `context.inject(token: string): unknown`
   <br/>
   Retrieve the bean resolved from the bean definition mapped to the given `token`, in this context or its ancestors.
-  + **returns**
-    + the bean resolved from this context, for the given `token` (cached value if the bean was already computed):
-      + when there is a bean definition, for this token, under default qualifier;
-      + when there is a bean definition, for this token, under the only existing qualifier;
-    + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is async
-      (a promise) that resolves to an empty value.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
-      + there is no bean definition mapped under default qualifier;
-      + there are multiple qualified candidates under the given `token`;
-    + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the given
-      `token`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
+    + **returns**
+        + the bean resolved from this context, for the given `token` (cached value if the bean was already computed):
+            + when there is a bean definition, for this token, under default qualifier;
+            + when there is a bean definition, for this token, under the only existing qualifier;
+        + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is
+          async
+          (a promise) that resolves to an empty value.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
+            + there is no bean definition mapped under default qualifier;
+            + there are multiple qualified candidates under the given `token`;
+        + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the
+          given
+          `token`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
 + `context.inject(token: string, qualifier): unknown`
   <br/>
   Retrieve the bean resolved from the bean definition mapped to the given `token` under the given `qualifier`, in this
   context or its ancestors.
-  + **returns**
-    + the bean resolved from this context, for the given `token` under the given `qualifier` (cached value if the bean
-      was already computed);
-    + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is async
-      (a promise) that resolves to an empty value.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the given
-      `token` under the give `qualifier`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
+    + **returns**
+        + the bean resolved from this context, for the given `token` under the given `qualifier` (cached value if the
+          bean
+          was already computed);
+        + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is
+          async
+          (a promise) that resolves to an empty value.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the
+          given
+          `token` under the give `qualifier`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
 + `context.inject<TK extends Token<infer T>>(token: TK): T`
   <br/>
   Retrieve the bean resolved from the bean definition mapped to the given `token`, in this context or its ancestors.
   <br/>
-  + **returns**
-    + the bean resolved from this context, for the given `token` (cached value if the bean was already computed):
-      + when there is a bean definition, for this token, under default qualifier;
-      + when there is a bean definition, for this token, under the only existing qualifier;
-    + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is async
-      (a promise) that resolves to an empty value.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
-      + there is no bean definition mapped under default qualifier;
-      + there are multiple qualified candidates under the given `token`;
-    + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the given
-      `token`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the bean is empty.
+    + **returns**
+        + the bean resolved from this context, for the given `token` (cached value if the bean was already computed):
+            + when there is a bean definition, for this token, under default qualifier;
+            + when there is a bean definition, for this token, under the only existing qualifier;
+        + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is
+          async
+          (a promise) that resolves to an empty value.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
+            + there is no bean definition mapped under default qualifier;
+            + there are multiple qualified candidates under the given `token`;
+        + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the
+          given
+          `token`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the bean is empty.
 + `context.inject<TK extends Token<infer T>>(token: TK, qualifier: string): T`
   <br/>
   Retrieve the bean resolved from the bean definition mapped to the given `token` under the given `qualifier`, in this
   context or its ancestors.
-  + **returns**
-    + the bean resolved from this context, for the given `token` under the given `qualifier` (cached value if the bean
-      was already computed);
-    + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is async
-      (a promise) that resolves to an empty value.
-  + **throws**
-    + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the given
-      `token` under the give `qualifier`;
-    + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
+    + **returns**
+        + the bean resolved from this context, for the given `token` under the given `qualifier` (cached value if the
+          bean
+          was already computed);
+        + a rejected `Promise` with `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is
+          async
+          (a promise) that resolves to an empty value.
+    + **throws**
+        + `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is registered for the
+          given
+          `token` under the give `qualifier`;
+        + `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
 + `context.inject<TK extends Token<infer T>>(token: TK, injectOptions: Context.InjectOptions): T`
   <br>
-  + See documentation for `context.inject<TK extends Token<infer T>>(token: TK): T` when `injectOptions.qualifier` is
-    missing;
-  + See documentation for `context.inject<TK extends Token<infer T>>(token: TK, qualifier: string): T` when
-    `injectOptions.qualifier` is defined;
-  + If `injectOptions.forceEvaluation === true`, then the cached bean is ignored IIF (If and only IF) the bean
-    definition was a factory.
+    + See documentation for `context.inject<TK extends Token<infer T>>(token: TK): T` when `injectOptions.qualifier` is
+      missing;
+    + See documentation for `context.inject<TK extends Token<infer T>>(token: TK, qualifier: string): T` when
+      `injectOptions.qualifier` is defined;
+    + If `injectOptions.forceEvaluation === true`, then the cached bean is ignored IIF (If and only IF) the bean
+      definition was a factory.
 
 #### Context.hasOwn
 
 + `context.hasOwn(token: Context.Token<unknown>): boolean`
   <br/>
   **returns** a boolean:
-  + `true` if the context called upon has a bean definition for the given `token` either with the default qualifier or
-    there is only one qualified candidate;
-  + `false` otherwise.
-    > Returning `false` can have two meaning:
-    > + There are multiple qualifiers under the given `token`, with none as the default qualifier
-    > + There is no bean definition with the given `token` in the context called on
+    + `true` if the context called upon has a bean definition for the given `token` either with the default qualifier or
+      there is only one qualified candidate;
+    + `false` otherwise.
+      > Returning `false` can have two meaning:
+      > + There are multiple qualifiers under the given `token`, with none as the default qualifier
+      > + There is no bean definition with the given `token` in the context called on
 + `context.hasOwn(token: Context.Token<unknown>, qualifier: string): boolean`
   <br/>
   **returns** a boolean:
-  + `true` if the context called upon has a bean definition for the given `token` and `qualifier`;
-  + `false` otherwise.
+    + `true` if the context called upon has a bean definition for the given `token` and `qualifier`;
+    + `false` otherwise.
 
 #### Context.has
 
 + `context.has(token: Context.Token<unknown>): boolean`
   <br/>
   **returns** a boolean:
-  + `true` if the context called upon or one of its ancestors has a bean definition for the given `token` with the
-    default qualifier (i.e. either provided without any qualifier or there is only one bean definition qualified);
-  + `false` otherwise.
-    > Note that the inspection for the default qualifier happen one context at a time and, `false` has one of two
-    > meaning:
-    > + There are multiple bean definitions under the given `token`, with none as default qualifier
-    > + There is no bean definition with the given `token` across the context's tree
+    + `true` if the context called upon or one of its ancestors has a bean definition for the given `token` with the
+      default qualifier (i.e. either provided without any qualifier or there is only one bean definition qualified);
+    + `false` otherwise.
+      > Note that the inspection for the default qualifier happen one context at a time and, `false` has one of two
+      > meaning:
+      > + There are multiple bean definitions under the given `token`, with none as default qualifier
+      > + There is no bean definition with the given `token` across the context's tree
 + `context.has(token: Context.Token<unknown>, qualifier: string): boolean`
   <br/>
   **returns** a boolean:
-  + `true` if the context called upon or its ancestors has a bean definition for the given `token` and `qualifier`;
-  + `false` otherwise.
+    + `true` if the context called upon or its ancestors has a bean definition for the given `token` and `qualifier`;
+    + `false` otherwise.
 
 **PARAMETERS**
 
 + `token`: the identifier for the bean definition we are checking existence of.
 + `qualifier`: a string to narrow down the search amongst bean definition specializations.
+
+### Promise
+
+The `Promise` API have been part of JavaScript for a long time now: first as pert of the ecosystem, then officially
+since ES2015. This implementation adds support for context-awareness and context propagation.
+
+> NOTE: Conceptually, one could say that this implementation is a wrapper around ES2015 promise but that would only be
+> conceptually-speaking. In practice, that would at least double the number of event-loops necessary to run promises
+> callback. And this implementation is meant to either replace standard `Promise` or along it, seamlessly.
+>
+> And even TypeScript definitions are compatible.
+
+Different contexts can be used/passed down at different level of the promise API. To reflect but also preserve that
+understanding, we use the latest precedence rule to resolve with context will construct the new promises we return.
+
+> For `async/await` compatibility, we provide the [`get context() { ... }`](#promisecontext) accessor so that you
+> do not have to break your preferred writing style.
+
+#### Promise Constructor
+
+A promise constructor as you know it, expect it may also receive a context: `(executor, context?)`.
+
+Now, the `executor` is a function that is called with two parameters - `executor: (resolve, reject) => void`:
+
++ `resolve(value, context?)`
++ `reject(reason, context?)`
+
+Where each callback can bubble up the context it used, along the `value`/`reason`.
+When given, callback context takes precedence over the constructor one (if any).
+
+```typescript
+import {Context, Promise as ContextPromise} from '@squall/context';
+
+const ctorCtx = new Context();
+
+// A promise that resolve to 1.
+// No different than a legacy promise (without context)
+new ContextPromise(res => res(1));
+
+// A promise that resolve to 1, with ctorCtx as context
+new ContextPromise(res => res(1), ctorCtx);
+
+// A promise that resolve to 1, with context as the value passed to `res`
+new ContextPromise(res => res(1, new Context()), ctorCtx);
+
+// A promise that reject with -1, with context as the value passed to `rej`
+new ContextPromise((_, rej) => rej(-1, new Context()), ctorCtx);
+```
+
+#### Promise.finally
+
+Method: accept a callback - `( context? ) => any` - that is executed asynchronously when the promise is settled.
+
+Its return value is a new promise that propagate the state of the original promise.
+
+#### Promise.catch
+
+Method: accept a callback - `(reason, context?) => R` - that is executed asynchronously when the promise rejects.
+
+Its return value is a new promise that either:
+
++ propagate the state of the original promise,
++ reject with any exception that happened during the callback execution
++ propagate the state of whatever value was returned by the callback
+
+#### Promise.then
+
+Method: accept two **optional** callbacks that could be `undefined` or `null`:
+
++ onFulfilled - `(value, context?) => F` - that is executed asynchronously when the promise resolves
++ onRejected - `(reason, context?) => R` - that is executed asynchronously when the promise rejects
+
+Its return value is a new promise that either:
+
++ propagate the state of the original promise, when no callback was given or were `undefined` or `null
++ reject with any exception that happened during either callback execution
++ propagate the state of whatever value was returned by the executed callback
+
+#### Promise.context
+
+Getter: resolves to a thenable (an object having a then method) which callbacks accept tuples instead:
+
++ onFulfilled - `(v: [ value, context? ]) => F` - that is executed asynchronously when the promise resolves
++ onRejected - `(r: [ reason, context? ]) => R` - that is executed asynchronously when the promise rejects
+
+Its return value is a new promise that either:
+
++ propagate the state of the original promise, when no callback was given or were `undefined` or `null
++ reject with any exception that happened during either callback execution
++ propagate the state of whatever value was returned by the executed callback
+
+> **NOTE:** This returned promise major added value is to help with the async/await writing style:
+> ```typescript
+> import { Promise as ContextPromise } from '@squall/context';
+> import { TRANSACTION_TOKEN } from './somewhere'
+> 
+> async function runInTransationAfer(promise: ContextPromise) {
+>   const [value, context] = await promise.context;
+>   const transationId = context.has(TRANSACTION_TOKEN) ? context.inject(TRANSACTION_TOKEN)
+>       : context.provide(TRANSACTION_TOKEN, /* start a new transaction and get its ID */).inject(TRANSACTION_TOKEN);
+> 
+>   // Do something with with value, reusing transaction when there is already an existsing one.
+> }
+> ```
+
+#### Promise::allSettled
+
+Static Method: `( iterableOrArrayOfValuesOrPromises, context? )` - return a promise that resolve
+with an aggregate array of statuses, each with the context it was resolved with, or,
+the context given to `allSettled` if the former is null-ish.
+
+While the aggregate entries have their respective context, the returned promise will only have a promise it was
+called with one.
+
+#### Promise::resolve
+
+Static Method: `( value, context? )` - return a promise that resolve with `value`, along with `context`, if given.
+
+#### Promise::reject
+
+Static Method: `( reason, context? )` - return a promise that reject with `reason`, along with `context`, if given.
+
+#### Promise::race
+
+Static Method: `( iterableOrArrayOfValuesOrPromises, context? )` - return a promise that settle with the state of the
+first entry to settle, along with that settled context or the `context` given in parameter, if any.
+
+#### Promise::all
+
+Static Method: `( iterableOrArrayOfValuesOrPromises, context? )` - return a promise that resolve with and array of
+values, along with `context` passed to this method, if given.
+
+#### Promise::any
+
+Static Method: `( iterableOrArrayOfValuesOrPromises, context? )` - return a promise that resolve with the first entry to
+of resolved, along with `context` either of the resolved entry or this method call (if given). It otherwise rejects with
+and `AggregateError` having reasons for all failures, or empty array if no entries were empty. 
 
 ## Contribution
 
@@ -385,10 +551,12 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 git clone https://github.com/squall-io/context.git
 cd context
 ```
+
 ```shell
 # Install dependencies
 yarn install
 ```
+
 ```shell
 # yarn test + nodemon
 yarn test:dev
@@ -429,5 +597,5 @@ Here is the plan:
 + [ ] @ContextProvider
 + [ ] Context discovery across code and dependencies
 + [ ] Beans metrics
-+ [ ] `Promise` integration
++ [x] `Promise` integration
 + [ ] `RxJs` integration
