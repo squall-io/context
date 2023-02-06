@@ -70,7 +70,7 @@ export class Context {
         const IS_EAGER_VALIDATION = !this.#configuration.factory.lazyValidation;
         const SHOULD_VALIDATE = Context.#isThenable(value)
             || (IS_EAGER_VALIDATION && (!factory || IS_EAGER_FACTORY_EVALUATION));
-        value = SHOULD_VALIDATE ? Context.#validValue(value, token, qualifiers[0]!, this) : value;
+        value = SHOULD_VALIDATE ? Context.#validValue(value, token, qualifiers[0]!, INJECT_NO_DEFAULT, this) : value;
 
         if (factory) {
             for (const qualifier of qualifiers) {
@@ -93,11 +93,15 @@ export class Context {
 
     inject<T extends Context.Token<any>>(token: T): Context.Value<T>;
     inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
-    inject<T extends Context.Token<any>>(token: T, injectOptions: Context.InjectOptions): Context.Value<T>;
-    inject<T extends Context.Token<any>>(
-        token: T, qualifierOrInjectOptions?: string | Context.InjectOptions): Context.Value<T> {
+    inject<T extends Context.Token<any>, D = never>(
+        token: T, injectOptions: Context.InjectOptions<D>): Context.Value<T> | D;
+    inject<T extends Context.Token<any>, D = never>(
+        token: T, qualifierOrInjectOptions?: string | Context.InjectOptions<D>): Context.Value<T> | D {
         const qualifier = ('string' === typeof qualifierOrInjectOptions
             ? qualifierOrInjectOptions : qualifierOrInjectOptions?.qualifier) ?? Context.#DEFAULT_QUALIFIER;
+        const defaultInjection = 'string' === typeof qualifierOrInjectOptions
+            ? INJECT_NO_DEFAULT : qualifierOrInjectOptions && 'default' in qualifierOrInjectOptions
+                ? qualifierOrInjectOptions.default : INJECT_NO_DEFAULT;
         const forceEvaluation = 'string' === typeof qualifierOrInjectOptions
             ? false : qualifierOrInjectOptions?.forceEvaluation;
         const resolvedBeanDefinition = this.#resolveBeanDefinition(token, qualifier);
@@ -120,7 +124,7 @@ export class Context {
                         ? (definition as any)['value']
                         : (definition as any)['factory']?.(context, token,
                             ...Context.#DEFAULT_QUALIFIER === qualifier ? [] : [qualifier]),
-                token, qualifier, this);
+                token, qualifier, defaultInjection, this);
 
             if (!('value' in definition)) {
                 this.#dependencies
@@ -137,6 +141,8 @@ export class Context {
                 ?.set(qualifier, value);
 
             return value;
+        } else if (INJECT_NO_DEFAULT !== defaultInjection) {
+            return defaultInjection;
         } else {
             const suffix = Context.#DEFAULT_QUALIFIER === qualifier
                 ? '' : Context.#format(' Qualifier<{0}>', qualifier);
@@ -224,21 +230,35 @@ export class Context {
             this.#parents.some(parent => parent.#has(token, qualifier));
     }
 
-    static #validValue<T>(value: T, token: Context.Token<any>, qualifier: string | symbol, context: Context): T {
+    static #validValue<T>(value: T, token: Context.Token<any>, qualifier: string | symbol,
+                          defaultInjection: any, context: Context): T {
         if (this.#isEmpty(value)) {
-            const suffix = Context.#DEFAULT_QUALIFIER === qualifier
-                ? '' : Context.#format(' Qualifier<{0}>', qualifier);
-            throw this.#error(Context.ERR_EMPTY_VALUE,
-                'Empty value ({0}) resolved for Token<{1}>{2}.',
-                value, Context.#tokenToString(token), suffix);
+            if (INJECT_NO_DEFAULT === defaultInjection) {
+                const suffix = Context.#DEFAULT_QUALIFIER === qualifier
+                    ? '' : Context.#format(' Qualifier<{0}>', qualifier);
+                throw this.#error(Context.ERR_EMPTY_VALUE,
+                    'Empty value ({0}) resolved for Token<{1}>{2}.',
+                    value, Context.#tokenToString(token), suffix);
+            } else {
+                // NOTE: Break infinite loops - no validation nor transformation
+                return defaultInjection;
+            }
         }
 
         if (this.#isThenable(value)) {
-            return new ContextPromise((resolve, reject) => value
-                .then(value => resolve(this.#validValue(value, token, qualifier, context), context),
-                    reason => reject(reason, context))
-                .then(null, reason => reject(reason, context))
-            ) as T;
+            return new ContextPromise(async (resolve, reject) => {
+                value.then((value, ctx = undefined) => {
+                    const next = this.#validValue(
+                        value, token, qualifier, defaultInjection, ctx ?? context);
+                    resolve(next, ctx ?? context);
+                }).then(null, (reason, ctx = undefined) => {
+                    if (reason instanceof Error && Context.ERR_EMPTY_VALUE === reason.name && INJECT_NO_DEFAULT !== defaultInjection) {
+                        resolve(defaultInjection, ctx ?? context);
+                    } else {
+                        reject(reason, ctx ?? context);
+                    }
+                });
+            }, context) as T;
         }
 
         return value;
@@ -313,9 +333,10 @@ export namespace Context {
         [K in keyof T]?: DeepPartial<T[K]>;
     };
 
-    export type InjectOptions = {
+    export type InjectOptions<D = never> = {
         forceEvaluation?: boolean;
         qualifier?: string;
+        default?: D;
     };
 
     export interface Configuration {
@@ -339,3 +360,5 @@ export namespace Context {
         }
     }
 }
+
+const INJECT_NO_DEFAULT: any = Symbol('INJECT_NO_DEFAULT');

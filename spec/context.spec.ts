@@ -1180,6 +1180,38 @@ describe('Context', () => {
                 expect(() => new Context().inject('home')).toThrowError((thrown: any) =>
                     thrown instanceof Error && Context.ERR_NO_BEAN_DEFINITION === thrown.name);
             });
+
+            it('do not thrown Context.ERR_EMPTY_VALUE when default option is given', async () => {
+                expect(new Context({factory: {lazyFunctionEvaluation: true}})
+                    .provide('value', () => undefined)
+                    .inject('value', {default: 1})
+                ).toBe(1);
+
+                await expect(new Context()
+                    .provide('value', () => Promise.resolve(undefined))
+                    .inject('value', {default: Promise.resolve(1)})
+                ).resolves.toBe(1);
+
+                expect(new Context()
+                    .provide('value', () => Promise.resolve(undefined))
+                    .inject('value', {default: Promise.resolve(1)})
+                ).toBeInstanceOf(ContextPromise);
+            });
+
+            it('do not thrown Context.ERR_NO_BEAN_DEFINITION when default option is given', () => {
+                expect(new Context()
+                    .inject('value', {default: 3})
+                ).toBe(3);
+            });
+
+            it('still thrown Context.ERR_UNDECIDABLE_BEAN even when default option is given', () => {
+                expect(() => new Context()
+                    .provide('value', 'variant-1', () => 1)
+                    .provide('value', 'variant-2', () => 2)
+                    .inject('value', {default: 3})
+                ).toThrowError((thrown: any) =>
+                    thrown instanceof Error && Context.ERR_UNDECIDABLE_BEAN === thrown.name);
+            });
         });
 
         describe('(token: string, qualifier: string)', () => {
@@ -2945,6 +2977,7 @@ describe('Context', () => {
 
         it('wrap it into the context-aware promise with type support', async () => {
             type T = Token<PromiseLike<number>>;
+
             class Bench extends ContextPromise<number> {
                 sitsCount?: number;
             }
