@@ -10,7 +10,7 @@ And they are best at what they do... Until they aren't: dependency injection, co
 // transfer.ts
 import { credit, debit } from './operations';
 
-const [debitMetadata, debitContext]  = await debit(sender, amount).context;
+const [debitMetadata, debitContext]  = await debit(sender, amount).context // <-- Context propagation;
 // NOTE: we pass along the context, for transaction reuse
 const creditMetadata = await credit(recipient, amount, debitContext);
 ```
@@ -24,25 +24,18 @@ import { Promise as ContextPromise } from '@squall.io/context';
 import { TRANSACTION_ID_TOKEN, start } from './transactional';
 import { Sender, Recipient } from './model/actors';
 
-export const debit = (sender: Sender, amount: number): ContextPromise<DebitMetadata> => { /* ... */ }
+export const debit = (sender: Sender, amount: number): ContextPromise<DebitMetadata> => {
+    /* ... */
+}
 
-export const credit = (recipient: Recipient, amount: number, ctx?: ContextPromise): ContextPromise<CreditMetadata> => {
-    let transactionId: string;
-    
-    try {
-        // If a transaction is started in the currrent context, re-use it.
-        // Also, if no context was given, just start a new transaction.
-        transactionId = ctx?.inject(TRANSACTION_ID_TOKEN) ?? start();
-    } catch (e) {
-        // If, for eg., no transaction was started and registered in the given context,
-        // we would get an error throw. And hence, need to start one
-        transactionId = start();
-    }
-    
+export const credit = (recipient: Recipient, amount: number,
+                       ctx?: ContextPromise): ContextPromise<CreditMetadata> => {
+    // If a transaction is started in the currrent context, re-use it.
+    // Also, if no context was given, just start a new transaction.
+    let transactionId = ctx?.inject(TRANSACTION_ID_TOKEN, {default: undefined}) ?? start(); // <-- DI
     ctx ??= new ContextPromise().provide(TRANSACTION_ID_TOKEN, transactionId);
     
     // Run the credit operation in transaction, reusing an existing one if possible
-    
     return ContextPromise.resolve(creditMetadata, ctx);
 }
 ```
