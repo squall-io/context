@@ -12,6 +12,8 @@ RUN yarn install
 #
 FROM baseline AS build
 COPY tsconfig.json tsconfig.base.json tsconfig.transpile.json .babelrc.json ./
+COPY jest.config.js ./
+COPY .babelrc.json ./
 COPY spec ./spec
 COPY src ./src
 RUN yarn build
