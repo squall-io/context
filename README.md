@@ -6,6 +6,52 @@ A CDI (Context and Dependency Injection) container, designed JavaScript asynchro
 JavaScript async is better known today through the `Promise` API and `RxJS`, best successors to callbacks' hell age.
 And they are best at what they do... Until they aren't: dependency injection, context and its propagation.
 
+**Features**
+
++ ```typescript
+  import { Context } from '@squall.io/context';
+  
+  // Create context container:
+  const context = new Context();
+  ```
++ ```typescript
+  // Register bean factories
+  context.provide('host', () => 'localhost');
+  ```
+  or
+  ```typescript
+  // Type inference with typescript + direct bean value
+  const token: Context.Token<Date> = Symbol('DATE');
+  // context.provide(token, () => new Date());
+  context.provide(token, new Date());
+  ```
++ ```typescript
+  // Inherit from one or more contexts
+  const scopedContext = new Context(context/** , ... **/);
+  ```
++ ```typescript
+  // Inject value, resolved from bean definitions in self or parent contexts
+  scopedContext.inject(token); // the date registered earlier on parent
+  scopedContext.inject('host'); // 'localhost'
+  // BONUS: A context can hoist bean definitions from parent/s.
+  ```
++ ```typescript
+  // Qualifiers: 'host' beans could be web server's host
+  //             but what about postgres' host? redis? smtp?
+  context.provide('host', ['db', 'postgres'], () => 5432);
+  context.provide('host', 'redis', () => 6372);
+  
+  // And later...
+  scopedContext.inject('host')              // 'localhost'
+  scopedContext.inject('host', 'redis')     // 6279
+  scopedContext.inject('host', 'db')        // 5432
+  scopedContext.inject('host', 'postgres')  // 5432
+  ```
+
+And much more...
+
+**Elaborate example**
+
 ```typescript
 // transfer.ts
 import { credit, debit } from './operations';
@@ -21,7 +67,7 @@ Provided the following...
 ```typescript
 // operations.ts
 import { CreditMetadata, DebitMetadata } from './model/metadata';
-import { Promise as ContextPromise } from '@squall.io/context';
+import { Context, Promise as ContextPromise } from '@squall.io/context';
 import { TRANSACTION_ID_TOKEN, start } from './transactional';
 import { Sender, Recipient } from './model/actors';
 
@@ -32,7 +78,7 @@ export const debit = (sender: Sender, amount: number): ContextPromise<DebitMetad
 export const credit = (recipient: Recipient, amount: number,
                        ctx?: ContextPromise): ContextPromise<CreditMetadata> => {
     // No context given? Start a new one.
-    ctx ??= new ContextPromise();
+    ctx ??= new Context();
     // Dependency Injection (graceful)
     let transactionId = ctx.inject(TRANSACTION_ID_TOKEN, {default: undefined});
     // No transaction in context? Start a new one
