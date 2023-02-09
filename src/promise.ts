@@ -322,3 +322,5 @@ export namespace Promise {
     }
     export type SettledResult<T> = FulfilledResult<T> | RejectedResult;
 }
+
+declare function setTimeout<A extends any[]>(fn: (...args: A) => any, ms?: number, ...args: A): number;
