@@ -15,6 +15,7 @@
   },
   "scripts": {
     "test": "yarpm type-check && yarpm jest",
+    "build": "yarpm test && yarpm transpile && yarpm type-emit",
     "type-check": "yarpm tsc --project ./tsconfig.json --noEmit",
     "transpile": "yarpm babel src/ --delete-dir-on-start --source-maps --extensions .ts --out-dir dist",
     "type-emit": "yarpm tsc --emitDeclarationOnly --project ./tsconfig.transpile.json --rootDir src --outDir dist",
