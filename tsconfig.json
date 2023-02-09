@@ -5,6 +5,7 @@
       "ESNext"
     ],
     "types": [],
+    "rootDir": ".",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
@@ -31,9 +32,5 @@
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "skipLibCheck": true
-  },
-  "include": [
-    "./src",
-    "./spec"
-  ]
+  }
 }
