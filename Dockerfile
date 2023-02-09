@@ -10,8 +10,8 @@ RUN yarn install
 #
 # {{test-and-build}}
 #
-FROM baseline AS test-and-build
-COPY tsconfig.json .babelrc.json ./
+FROM baseline AS build
+COPY tsconfig.json tsconfig.base.json tsconfig.transpile.json .babelrc.json ./
 COPY spec ./spec
 COPY src ./src
 RUN yarn build
@@ -22,7 +22,6 @@ RUN yarn build
 FROM node:alpine AS deploy
 WORKDIR /opt/app
 
-COPY --from=test-and-build /opt/app/dist ./
+COPY --from=build /opt/app/dist ./
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
-RUN ls -al
 RUN npm publish --access public
