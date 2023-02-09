@@ -11,7 +11,8 @@ And they are best at what they do... Until they aren't: dependency injection, co
 import { credit, debit } from './operations';
 
 const [debitMetadata, debitContext]  = await debit(sender, amount).context // <-- Context propagation;
-// NOTE: we pass along the context, for transaction reuse
+// NOTE: We pass along the context from debit to credit...
+//       For tx ID reuse.
 const creditMetadata = await credit(recipient, amount, debitContext);
 ```
 
@@ -30,12 +31,17 @@ export const debit = (sender: Sender, amount: number): ContextPromise<DebitMetad
 
 export const credit = (recipient: Recipient, amount: number,
                        ctx?: ContextPromise): ContextPromise<CreditMetadata> => {
-    // If a transaction is started in the currrent context, re-use it.
-    // Also, if no context was given, just start a new transaction.
-    let transactionId = ctx?.inject(TRANSACTION_ID_TOKEN, {default: undefined}) ?? start(); // <-- DI
-    ctx ??= new ContextPromise().provide(TRANSACTION_ID_TOKEN, transactionId);
-    
-    // Run the credit operation in transaction, reusing an existing one if possible
+    // No context given? Start a new one.
+    ctx ??= new ContextPromise();
+    // Dependency Injection (graceful)
+    let transactionId = ctx.inject(TRANSACTION_ID_TOKEN, {default: undefined});
+    // No transaction in context? Start a new one
+    transactionId ??= start();
+    // Register tx ID if context has none yet? 
+    ctx.has(TRANSACTION_ID_TOKEN) || ctx.provide(TRANSACTION_ID_TOKEN, transactionId);
+
+    // TODO: Run the credit operation in tx, using tx ID
+
     return ContextPromise.resolve(creditMetadata, ctx);
 }
 ```
