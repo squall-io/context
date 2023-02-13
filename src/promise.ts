@@ -122,7 +122,6 @@ export class Promise<T> implements PromiseLike<T> {
         return new this((resolve, reject) => {
             for (const value of values) {
                 if (this.#isPromiseLike(value)) {
-                    // value.then(resolve as any, reject)
                     value.then((value: any, ctx?: Context) => resolve(value, ctx ?? context),
                         (reason: any, ctx?: Context) => reject(reason, ctx ?? context))
                 } else {
