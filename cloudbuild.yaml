@@ -9,6 +9,6 @@ steps:
           get-secret() {
             gcloud secrets versions access latest --secret="$1" --format='get(payload.data)' | tr '_-' '/+' | base64 -d
           }
-          echo "//registry.npmjs.org/:_authToken=$( get-secret NPM_TOKEN )" >> .npmrc
+          echo "//registry.npmjs.org/:_authToken=\"$( get-secret NPM_TOKEN )\"" >> .npmrc
   - name: gcr.io/cloud-builders/docker
     args: [ "build", "." ]
