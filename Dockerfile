@@ -22,6 +22,7 @@ RUN yarn build
 # {{deploy}}
 #
 FROM node:alpine AS deploy
+ENV HOME=/opt/app
 WORKDIR /opt/app
 
 COPY --from=build /opt/app/dist ./
