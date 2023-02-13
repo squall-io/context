@@ -640,6 +640,11 @@ Static Method: `( iterableOrArrayOfValuesOrPromises, context? )` - return a prom
 of resolved, along with `context` either of the resolved entry or this method call (if given). It otherwise rejects with
 and `AggregateError` having reasons for all failures, or empty array if no entries were empty. 
 
+#### Promise::from
+
+Static Method: `( thenable, context? )` - return a context-aware thenable. If the given `thenable` is not context-aware
+already, use the given `context` to back returned value context awareness.
+
 ## Contribution
 
 ```shell
@@ -687,7 +692,6 @@ Here is the plan:
 + [ ] Context.from(beanObject)
   <br/>
   _(We should drop this, as it will get messy when sharing execution context with shared objects.)_
-+ [x] Function and method invocation with context
 + [ ] Conditional beans
 + [ ] Beans lifecycles events
 + [ ] Reactive beans: that create/update/delete based on context events

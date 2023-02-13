@@ -166,6 +166,18 @@ export class Promise<T> implements PromiseLike<T> {
         });
     }
 
+    static from<P extends PromiseLike<I>, I>(promise: P, context?: Context): Promise<I> {
+        if (this.#isPromiseLike(promise)) {
+            if (promise instanceof Promise) {
+                return promise as any;
+            } else {
+                return new Promise((resolve, reject) => promise.then(resolve, reject), context) as any;
+            }
+        }
+
+        throw new Error(`Not a thenable: ${promise}.`);
+    }
+
     get [Symbol.toStringTag](): string {
         return Promise.name;
     }
@@ -317,9 +329,11 @@ export namespace Promise {
     export interface FulfilledResult<T> extends PromiseFulfilledResult<T> {
         context?: Context | undefined | null;
     }
+
     export interface RejectedResult extends PromiseRejectedResult {
         context?: Context | undefined | null;
     }
+
     export type SettledResult<T> = FulfilledResult<T> | RejectedResult;
 }
 

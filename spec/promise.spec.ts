@@ -3,6 +3,7 @@ import {Context, Promise as ContextPromise} from "../src";
 import Mock = jest.Mock;
 
 const TestedPromise = ContextPromise;
+const BuiltinPromise = Promise;
 const {fn} = jest;
 
 describe('Promise', () => {
@@ -700,6 +701,26 @@ describe('Promise', () => {
             TestedPromise.allSettled([TestedPromise.race([])]).finally(onFinally);
             await new TestedPromise(res => setTimeout(res, 10, 1));
             expect(onFinally).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('::from', () => {
+        it('return a context-aware promise', () => {
+            const contextAwarePromise = new TestedPromise(_ => _);
+            expect(TestedPromise.from(contextAwarePromise)).toBe(contextAwarePromise);
+            expect(TestedPromise.from(BuiltinPromise.resolve(1))).toBeInstanceOf(TestedPromise);
+        });
+
+        it('return a context-aware promise, with given context if given thenable was not context-aware', async () => {
+            let withContext = await TestedPromise.from(BuiltinPromise.resolve(1)).context;
+            expect(withContext).toHaveLength(1)
+            expect(withContext[0]).toBe(1);
+
+            const context = new Context();
+            withContext = await TestedPromise.from(BuiltinPromise.resolve(2), context).context;
+            expect(withContext).toHaveLength(2)
+            expect(withContext[0]).toBe(2);
+            expect(withContext[1]).toBe(context);
         });
     });
 
