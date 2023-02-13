@@ -7,6 +7,8 @@ export class Context {
     static readonly ERR_UNDECIDABLE_BEAN = 'UNDECIDABLE_BEAN';
     static readonly ERR_EMPTY_VALUE = 'EMPTY_VALUE';
 
+    static #invoked?: Context | undefined;
+
     readonly #dependencies = new Context.FlexibleMap<Context.Token<any>, Context.FlexibleMap<string | symbol, any>>();
     readonly #factories = new Context.FlexibleMap<Context.Token<any>,
         Context.FlexibleMap<string | symbol, Context.Factory<unknown>>>();
@@ -28,6 +30,12 @@ export class Context {
             this.#configuration.factory.lazyFunctionEvaluation =
                 configurationOrParent.factory?.lazyFunctionEvaluation ?? false;
         }
+    }
+
+    static get invoked(): Context | undefined {
+        const invoked = Context.#invoked;
+        Context.#invoked = undefined;
+        return invoked;
     }
 
     provide<T extends Context.Token<any>>(
@@ -157,6 +165,17 @@ export class Context {
 
     has(token: Context.Token<any>, qualifier?: string): boolean {
         return this.#has(token, qualifier ?? Context.#DEFAULT_QUALIFIER);
+    }
+
+    invoke<R>(fn: (context: Context) => R): R extends PromiseLike<infer I> ? ContextPromise<I> : R {
+        const returned = fn(Context.#invoked = this);
+        Context.#invoked = undefined;
+
+        if (Context.#isThenable(returned)) {
+            return ContextPromise.from(returned) as any;
+        } else {
+            return returned as any;
+        }
     }
 
     #resolveBeanDefinition(token: Context.Token<any>, qualifier: string | symbol): void |
@@ -345,6 +364,10 @@ export namespace Context {
             lazyValidation: boolean;
         };
     }
+
+    export type Method<T> = {
+        [K in keyof T]: K extends any ? T[K] extends ((...ars: any[]) => any) ? K : never : never;
+    }[keyof T];
 
     export class FlexibleMap<K, V> extends Map<K, V> {
         computeIfNotExists(key: K, computer: { (key: K): V | undefined }): V | undefined | null {

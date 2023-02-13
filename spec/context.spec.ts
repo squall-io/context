@@ -2966,6 +2966,55 @@ describe('Context', () => {
         });
     });
 
+    describe('.invoke( fn )', () => {
+        it('immediately call fn once', () => {
+            const spy = fn();
+            new Context().invoke(spy);
+            expect(spy).toHaveBeenCalledTimes(1);
+        });
+
+        it('immediately call fn once with context', () => {
+            const spy = fn();
+            const context = new Context();
+
+            context.invoke(spy);
+            expect(spy).nthCalledWith(1, context);
+        });
+
+        it('return the value of fn', () => {
+            expect(new Context().invoke(() => Math.PI)).toBe(Math.PI);
+        });
+
+        it('return the value of fn wrapped in context', async () => {
+            const context = new Context();
+            const result = context.invoke(async () => Math.PI);
+
+            await expect(result).resolves.toBe(Math.PI);
+            expect(result).toBeInstanceOf(ContextPromise);
+        });
+    });
+
+    describe('::[[get invoked]]', () => {
+        it('should return context during .invoke(...) fn execution', () => {
+            new Context().invoke(context => expect(Context.invoked).toBe(context));
+        });
+
+        it('should return context during .invoke(...) fn execution only at first call', () => {
+            new Context().invoke(context => {
+                expect(Context.invoked).toBe(context);
+                expect(Context.invoked).toBeUndefined();
+            });
+        });
+
+        it('should not return context after .invoke(...) fn execution', () => {
+            new Context().invoke(_ => _);
+            expect(Context.invoked).toBeUndefined();
+
+            new Context().invoke(async _ => _);
+            expect(Context.invoked).toBeUndefined();
+        });
+    });
+
     describe('when the injected bean is a promise', () => {
         it('wrap it into the context-aware promise implementation', async () => {
             const NUMBER_PROMISE: Token<PromiseLike<number>> = Symbol('NUMBER_PROMISE');

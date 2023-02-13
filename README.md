@@ -104,6 +104,8 @@ export const credit = (recipient: Recipient, amount: number,
         + [Context.inject](#context.inject)
         + [Context.hasOwn](#context.hasOwn)
         + [Context.has](#context.has)
+        + [Context.invoke](#contextinvoke)
+        + [Context::[[get invoked]]](#contextget-invoked)
     + [Promise](#promise)
         + [Promise Constructor](#promise-constructor)
         + [Promise.finally](#promisefinally)
@@ -481,6 +483,26 @@ Let's start by establishing some terms and expressions, in this CDI implementati
 + `token`: the identifier for the bean definition we are checking existence of.
 + `qualifier`: a string to narrow down the search amongst bean definition specializations.
 
+#### Context.invoke
+
+Run code within context.
+
++ `context.invoke<R>( fn: (context: Context) => R ): R extends PromiseLike<infer I> ? ContextPromise<I> : R`
+  <br/>
+  **returns** the value returned by `fn` or, if a thenable, wraps it within a context aware promise.
+
+**PARAMETERS**
+
++ `fn`: a function that accepts the invocation context as a parameter and, returns a value.
+
+#### Context::[[get invoked]]
+
+When called first time in the current event loop, while the `fn` function of [`context.invoke`](#contextinvoke),
+return the context on which `fn` was invoked.
+
+> **NOTE:** This getter shouldn't be accessed twice in the same execution context.
+>           This rule enhances nested context calls determinism.
+
 ### Promise
 
 The `Promise` API have been part of JavaScript for a long time now: first as pert of the ecosystem, then officially
@@ -660,7 +682,12 @@ We follow best practices for Open-Source Software contributions, including:
 Here is the plan:
 
 + [ ] Binding contexts to injected bean
+  <br/>
+  _(We should drop this, as it will get messy when sharing execution context with shared objects.)_
 + [ ] Context.from(beanObject)
+  <br/>
+  _(We should drop this, as it will get messy when sharing execution context with shared objects.)_
++ [x] Function and method invocation with context
 + [ ] Conditional beans
 + [ ] Beans lifecycles events
 + [ ] Reactive beans: that create/update/delete based on context events
@@ -670,5 +697,4 @@ Here is the plan:
 + [ ] @ContextProvider
 + [ ] Context discovery across code and dependencies
 + [ ] Beans metrics
-+ [x] `Promise` integration
 + [ ] `RxJs` integration
