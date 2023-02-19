@@ -35,13 +35,11 @@ COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
 RUN echo "//registry.npmjs.org/:_authToken=\"$NPM_TOKEN\"" >> .npmrc
 
 RUN apk --no-cache add curl
-RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 'Not published.'
-RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov
-RUN ./codecov \
-    --nonZero \
-    --rootDir . \
-    --dir .coverage \
-    --slug squall-io/context \
-    --token "$CODECOV_TOKEN" \
-    --branch "$BRANCH_NAME" \
-    --sha "$COMMIT_SHA"
+RUN test 'main' = "$BRANCH_NAME" \
+    && npm publish --access public \
+    || echo 'Not published.'
+RUN rm .npmrc
+RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
+RUN chmod +x codecov
+RUN CI="" ./codecov --nonZero --rootDir . --dir .coverage --slug squall-io/context \
+    --token "$CODECOV_TOKEN" --branch "$BRANCH_NAME" --sha "$COMMIT_SHA"
