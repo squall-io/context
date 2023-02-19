@@ -34,7 +34,7 @@ COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
 RUN echo "//registry.npmjs.org/:_authToken=\"$NPM_TOKEN\"" >> .npmrc
 
 RUN apk --no-cache add curl
-RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 1
-RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov && source .codecovrc
+RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 'Not published.'
+RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov
 
 RUN ./codecov --dir .coverage --branch "$BRANCH_NAME" --token "$CODECOV_TOKEN"
