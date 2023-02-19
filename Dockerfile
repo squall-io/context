@@ -41,5 +41,5 @@ RUN test 'main' = "$BRANCH_NAME" \
 RUN rm .npmrc
 RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
 RUN chmod +x codecov
-RUN CI="" ./codecov --nonZero --rootDir . --dir .coverage --slug squall-io/context \
+RUN CI="" ./codecov --nonZero --rootDir . --dir .coverage --slug squall-io/context --file clover.xml \
     --token "$CODECOV_TOKEN" --branch "$BRANCH_NAME" --sha "$COMMIT_SHA"
