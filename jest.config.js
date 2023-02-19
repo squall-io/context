@@ -6,9 +6,6 @@ module.exports = {
   testEnvironment: 'node',
   collectCoverage: true,
   coverageDirectory: '.coverage',
-  coverageReporters: [
-    'json',
-  ],
   setupFilesAfterEnv: [
     './spec/.jest/setup',
   ],
