@@ -150,7 +150,7 @@ We follow best practices for Open-Source Software contributions, including:
 + Be respectful of peers inputs
 + If you say something, add value
 + Lint, test, be consistent before submitting a pull request (PR)
-+ Document you code, even with commits and PR description for the dummies
++ Document your code, even with commits and PR description for the beginners
 
 > + Submit pull request at: https://github.com/squall-io/context/pulls
 > + Open issues at (using labels for triage): https://github.com/squall-io/context/issues
