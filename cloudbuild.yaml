@@ -7,6 +7,7 @@ steps:
         docker build . \
           --build-arg=CODECOV_TOKEN=$$CODECOV_TOKEN \
           --build-arg=BRANCH_NAME=$BRANCH_NAME \
+          --build-arg=COMMIT_SHA=$COMMIT_SHA \
           --build-arg=NPM_TOKEN=$$NPM_TOKEN \
     secretEnv:
       - CODECOV_TOKEN
