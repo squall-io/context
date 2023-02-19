@@ -4,10 +4,10 @@ module.exports = {
   verbose: false,
   preset: 'ts-jest',
   testEnvironment: 'node',
+  collectCoverage: true,
   coverageDirectory: '.coverage',
   coverageReporters: [
-    'cobertura',
-    'text',
+    'json',
   ],
   setupFilesAfterEnv: [
     './spec/.jest/setup',
