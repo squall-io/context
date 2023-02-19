@@ -25,6 +25,11 @@ FROM node:alpine AS deploy
 ENV HOME=/opt/app
 WORKDIR /opt/app
 
+RUN echo "BRANCH_NAME=$BRANCH_NAME"
 COPY --from=build /opt/app/dist ./
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
 RUN npm publish --access public
+
+RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
+RUN chmod +x codecov
+RUN source .codecovrc && ./codecov --dir .coverage
