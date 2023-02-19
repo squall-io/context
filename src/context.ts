@@ -408,8 +408,6 @@ export class Context {
 
         if (factory) {
             return [this, {factory}];
-        } else if (factoryByToken?.size && 1 < factoryByToken?.size) {
-            return [this, {}, true]; // Undecidable
         }
 
         for (const parent of this.#parents.reverse()) {
