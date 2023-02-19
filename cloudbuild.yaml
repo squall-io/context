@@ -1,17 +1,17 @@
 steps:
   - name: gcr.io/cloud-builders/docker
     secretEnv:
-      - CODECOV_TOKEN
-      - NPM_TOKEN
+      - _CODECOV_TOKEN
+      - _NPM_TOKEN
     args:
-      - "build"
-      - "."
-      - "--build-arg=CODECOV_TOKEN=$CODECOV_TOKEN"
-      - "--build-arg=BRANCH_NAME=$BRANCH_NAME"
-      - "--build-arg=NPM_TOKEN=$NPM_TOKEN"
+      - build
+      - .
+      - --build-arg=CODECOV_TOKEN=$_CODECOV_TOKEN
+      - --build-arg=BRANCH_NAME=$BRANCH_NAME
+      - --build-arg=NPM_TOKEN=$_NPM_TOKEN
 availableSecrets:
   secretManager:
     - versionName: projects/$PROJECT_ID/secrets/CODECOV_TOKEN/versions/latest
-      env: CODECOV_TOKEN
+      env: _CODECOV_TOKEN
     - versionName: projects/$PROJECT_ID/secrets/NPM_TOKEN/versions/latest
-      env: NPM_TOKEN
+      env: _NPM_TOKEN
