@@ -266,7 +266,7 @@ describe('Promise', () => {
     describe('.finally( onSettled )', () => {
         it('do not execute callback as soon as the promise is resolved', async () => {
             const onSettled = fn();
-            const promise = new TestedPromise(res => res(1));
+            const promise = new TestedPromise(res => setTimeout(() => res(1)));
             promise.finally(onSettled);
 
             expect(onSettled).toHaveBeenCalledTimes(0);
@@ -330,12 +330,25 @@ describe('Promise', () => {
             await expect(new TestedPromise(res => res(1)).finally(undefined))
                 .resolves.toBe(1);
 
-            await expect(new TestedPromise((_, rej) => rej(-1)).finally())
+            await expect(new TestedPromise((_, rej) => setTimeout(rej, 0, -1)).finally())
                 .rejects.toBe(-1);
             await expect(new TestedPromise((_, rej) => rej(-1)).finally(null))
                 .rejects.toBe(-1);
             await expect(new TestedPromise((_, rej) => rej(-1)).finally(undefined))
                 .rejects.toBe(-1);
+        });
+
+        it('return a failing promise with the onFinally callback throws', async () => {
+            const onRejected = fn();
+            const context = new Context();
+            await TestedPromise
+                .resolve(1, context)
+                .finally(() => {
+                    throw -1;
+                })
+                .catch(onRejected);
+
+            expect(onRejected).nthCalledWith(1, -1, context);
         });
 
         it('return a different promise [even] when no callbacks', () => {
@@ -606,6 +619,34 @@ describe('Promise', () => {
                 new TestedPromise((_, rej) => setTimeout(rej, 1, -2))
             ])).rejects.toBe(-2);
         });
+
+        it('expose context-awareness through context property on aggregate array', async () => {
+            const context = new Context();
+            const otherContext = new Context();
+            const anotherContext = new Context();
+            const {context: results} = await TestedPromise.all([
+                0,
+                TestedPromise.resolve(1, otherContext),
+                TestedPromise.resolve(2),
+                TestedPromise.resolve(3, anotherContext),
+            ], context);
+            expect(results).toHaveLength(4);
+            expect(results[0][0]).toBe(0);
+            expect(results[0][1]).toBe(context);
+            expect(results[1][0]).toBe(1);
+            expect(results[1][1]).toBe(otherContext);
+            expect(results[2][0]).toBe(2);
+            expect(results[2][1]).toBe(context);
+            expect(results[3][0]).toBe(3);
+            expect(results[3][1]).toBe(anotherContext);
+
+            const {context: otherResults} = await TestedPromise.all([0, 1], context);
+            expect(otherResults).toHaveLength(2);
+            expect(otherResults[0][0]).toBe(0);
+            expect(otherResults[0][1]).toBe(context);
+            expect(otherResults[1][0]).toBe(1);
+            expect(otherResults[1][1]).toBe(context);
+        });
     });
 
     describe('::any( sources )', () => {
@@ -692,6 +733,20 @@ describe('Promise', () => {
                 {status: 'fulfilled', value: 0},
                 {status: 'fulfilled', value: 1},
             ]);
+            await expect(TestedPromise.allSettled([
+                0,
+                TestedPromise.resolve(1),
+                TestedPromise.reject(-1),
+            ])).resolves.toEqual([
+                {status: 'fulfilled', value: 0},
+                {status: 'fulfilled', value: 1},
+                {status: 'rejected', reason: -1},
+            ]);
+            await expect(TestedPromise.allSettled([0, 1, 2])).resolves.toEqual([
+                {status: 'fulfilled', value: 0},
+                {status: 'fulfilled', value: 1},
+                {status: 'fulfilled', value: 2},
+            ]);
             await expect(TestedPromise.allSettled([]))
                 .resolves.toEqual([]);
         });
@@ -721,6 +776,11 @@ describe('Promise', () => {
             expect(withContext).toHaveLength(2)
             expect(withContext[0]).toBe(2);
             expect(withContext[1]).toBe(context);
+        });
+
+        it('throw error when given parameter is not a thenable', () => {
+            expect(() => TestedPromise.from(null as any)).toThrowError((thrown: any) =>
+                thrown instanceof Error && 'Not a thenable: null.' === thrown.message)
         });
     });
 

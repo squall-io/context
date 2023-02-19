@@ -24,7 +24,25 @@ RUN yarn build
 FROM node:alpine AS deploy
 ENV HOME=/opt/app
 WORKDIR /opt/app
+ARG CODECOV_TOKEN
+ARG BRANCH_NAME
+ARG COMMIT_SHA
+ARG NPM_TOKEN
 
 COPY --from=build /opt/app/dist ./
+COPY --from=build /opt/app/.coverage ./.coverage
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
-RUN npm publish --access public
+RUN echo "//registry.npmjs.org/:_authToken=\"$NPM_TOKEN\"" >> .npmrc
+
+RUN apk --no-cache add curl
+RUN test 'main' = "$BRANCH_NAME" \
+    && npm publish --access public \
+    || echo 'Not published.'
+RUN rm .npmrc
+RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
+RUN chmod +x codecov
+RUN CI="" ./codecov --nonZero --rootDir . --dir .coverage --slug squall-io/context \
+    --file lcov.info --file clover.xml --file coverage-final.json \
+    --token "$CODECOV_TOKEN" \
+    --branch "$BRANCH_NAME" \
+    --sha "$COMMIT_SHA"
