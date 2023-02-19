@@ -1,5 +1,6 @@
 @squall.io/context
 ===
+[![codecov](https://codecov.io/github/squall-io/context/branch/dev/graph/badge.svg?token=FS6DflFMtf)](https://app.codecov.io/github/squall-io/context)
 
 Welcome to `@squall.io/context` library! This library was created to help developers quickly and easily propagate
 context and handle synchronous and asynchronous operations in their applications.
