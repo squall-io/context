@@ -24,14 +24,17 @@ RUN yarn build
 FROM node:alpine AS deploy
 ENV HOME=/opt/app
 WORKDIR /opt/app
+ARG CODECOV_TOKEN
 ARG BRANCH_NAME
+ARG NPM_TOKEN
 
 COPY --from=build /opt/app/dist ./
 COPY --from=build /opt/app/.coverage ./.coverage
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
-RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 1
+RUN echo "//registry.npmjs.org/:_authToken=\"$NPM_TOKEN\"" >> .npmrc
 
 RUN apk --no-cache add curl
-RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
-RUN chmod +x codecov
-RUN source .codecovrc && ./codecov --dir .coverage --branch "$BRANCH_NAME"
+RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 1
+RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov && source .codecovrc
+
+RUN ./codecov --dir .coverage --branch "$BRANCH_NAME" --token "$CODECOV_TOKEN"

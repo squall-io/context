@@ -1,16 +1,17 @@
 steps:
-  - name: gcr.io/cloud-builders/gcloud
-    entrypoint: /bin/bash
-    env: [ "BRANCH_NAME=${BRANCH_NAME}" ]
-    args:
-      - -c
-      - |
-          set -euo
-
-          get-secret() {
-            gcloud secrets versions access latest --secret="$1" --format='get(payload.data)' | tr '_-' '/+' | base64 -d
-          }
-          echo "//registry.npmjs.org/:_authToken=\"$( get-secret NPM_TOKEN )\"" >> .npmrc
-          echo "CODECOV_TOKEN=$( get-secret CODECOV_TOKEN )" > .codecovrc
   - name: gcr.io/cloud-builders/docker
-    args: [ "build", ".", "--build-arg=BRANCH_NAME=${BRANCH_NAME}" ]
+    secretEnv:
+      - CODECOV_TOKEN
+      - NPM_TOKEN
+    args:
+      - "build"
+      - "."
+      - "--build-arg=CODECOV_TOKEN=$$CODECOV_TOKEN"
+      - "--build-arg=BRANCH_NAME=$$BRANCH_NAME"
+      - "--build-arg=NPM_TOKEN=$$NPM_TOKEN"
+availableSecrets:
+  secretManager:
+    - versionName: projects/$PROJECT_ID/secrets/CODECOV_TOKEN/versions/latest
+      env: CODECOV_TOKEN
+    - versionName: projects/$PROJECT_ID/secrets/NPM_TOKEN/versions/latest
+      env: NPM_TOKEN
