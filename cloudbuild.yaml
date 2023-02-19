@@ -12,4 +12,4 @@ steps:
           echo "//registry.npmjs.org/:_authToken=\"$( get-secret NPM_TOKEN )\"" >> .npmrc
           echo "CODECOV_TOKEN=$( get-secret CODECOV_TOKEN )" > .codecovrc
   - name: gcr.io/cloud-builders/docker
-    args: [ "build", ".", "--build-arg", "BRANCH_NAME=$BRANCH_NAME" ]
+    args: [ "build", ".", "--build-arg", "BRANCH_NAME=${BRANCH_NAME}" ]
