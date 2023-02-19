@@ -67,26 +67,50 @@ export class Promise<T> implements PromiseLike<T> {
     }
 
     static all<T extends readonly unknown[] | []>(values: T, context?: Context):
-        Promise<{ -readonly [P in keyof T]: Awaited<T[P]> }> {
+        Promise<{ -readonly [P in keyof T]: Awaited<T[P]> } & {
+            readonly context: { -readonly [P in keyof T]: [Awaited<T[P]>, Context?] };
+        }> {
         return new this((resolve, reject) => {
-            const fulfillment = new Map<unknown, unknown>();
+            const fulfillContext = new Map<unknown, Context | undefined>();
+            const fulfillValues = new Map<unknown, unknown>();
+            const uniqueValues = new Set(values);
 
-            for (const value of values) {
+            for (const value of uniqueValues) {
                 if (this.#isPromiseLike(value)) {
-                    value.then(resolved => {
-                        fulfillment.set(value, resolved);
+                    value.then((resolved, ctx?: Context) => {
+                        fulfillValues.set(value, resolved);
+                        fulfillContext.set(value, ctx ?? context);
 
-                        if (fulfillment.size === new Set(values).size) {
-                            resolve(values.map(value => fulfillment.get(value)) as any, context);
+                        if (fulfillValues.size === uniqueValues.size) {
+                            const outcomes = values.map(value => fulfillValues.get(value));
+                            Reflect.defineProperty(outcomes, 'context', {
+                                value: Object.freeze(values.map(key => {
+                                    const ctx = fulfillContext.get(key);
+                                    return ctx ? [fulfillValues.get(key), ctx] : [fulfillValues.get(key)];
+                                })),
+                                enumerable: false,
+                                writable: false,
+                            });
+                            resolve(outcomes as any, context);
                         }
-                    }, reason => reject(reason, context));
+                    }, (reason, ctx?: Context) => reject(reason, ctx ?? context));
                 } else {
-                    fulfillment.set(value, value);
+                    fulfillValues.set(value, value);
+                    fulfillContext.set(value, context);
                 }
             }
 
-            if (fulfillment.size === new Set(values).size) {
-                resolve(values.map(value => fulfillment.get(value)) as any, context);
+            if (fulfillValues.size === uniqueValues.size) {
+                const outcomes = values.map(value => fulfillValues.get(value));
+                Reflect.defineProperty(outcomes, 'context', {
+                    value: Object.freeze(values.map(key => {
+                        const value = fulfillValues.get(key);
+                        return context ? [value, context] : [value];
+                    })),
+                    enumerable: false,
+                    writable: false,
+                });
+                resolve(outcomes as any, context);
             }
         });
     }
