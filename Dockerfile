@@ -2,6 +2,7 @@
 # {{baseline}}
 #
 FROM node:alpine AS baseline
+ARG BRANCH_NAME
 RUN echo "BRANCH_NAME=$BRANCH_NAME"
 WORKDIR /opt/app
 
