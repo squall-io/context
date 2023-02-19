@@ -37,4 +37,5 @@ RUN apk --no-cache add curl
 RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 'Not published.'
 RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov
 
-RUN ./codecov --rootDir . --dir .coverage --branch "$BRANCH_NAME" --token "$CODECOV_TOKEN"
+RUN env
+RUN ./codecov --nonZero --rootDir . --dir .coverage --branch "$BRANCH_NAME" --token "$CODECOV_TOKEN"
