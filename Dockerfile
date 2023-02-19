@@ -2,8 +2,6 @@
 # {{baseline}}
 #
 FROM node:alpine AS baseline
-ARG BRANCH_NAME
-RUN echo "BRANCH_NAME=$BRANCH_NAME"
 WORKDIR /opt/app
 
 COPY package.json yarn.loc[k] ./
@@ -26,10 +24,11 @@ RUN yarn build
 FROM node:alpine AS deploy
 ENV HOME=/opt/app
 WORKDIR /opt/app
+ARG BRANCH_NAME
 
 COPY --from=build /opt/app/dist ./
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
-RUN npm publish --access public
+RUN test 'main' = "$BRANCH_NAME" && npm publish --access public
 
 RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
 RUN chmod +x codecov
