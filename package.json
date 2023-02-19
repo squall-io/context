@@ -14,7 +14,7 @@
     "url": "https://github.com/squall-io/context.git"
   },
   "scripts": {
-    "test": "yarpm type-check && yarpm jest",
+    "test": "yarpm type-check && yarpm jest --coverage",
     "build": "yarpm test && yarpm transpile && yarpm type-emit",
     "type-check": "yarpm tsc --project ./tsconfig.json --noEmit",
     "transpile": "yarpm babel src/ --delete-dir-on-start --source-maps --extensions .ts --out-dir dist",

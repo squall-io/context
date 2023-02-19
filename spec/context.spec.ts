@@ -52,9 +52,12 @@ describe('Context', () => {
                     .provide('address', 'here', () => 'Earth'))
                 .hasOwn('address', 'here')).toBe(false);
 
-            expect(new Context()
+            expect(new Context({factory: {lazyFunctionEvaluation: true}})
                 .provide('address', 'here', () => 'Earth')
                 .hasOwn('address', 'here')).toBe(true);
+            expect(new Context({factory: {lazyFunctionEvaluation: true}})
+                .provide('address', 'here', () => 'Earth')
+                .hasOwn('address')).toBe(true);
             expect(new Context()
                 .provide('address', ['here', 'around'], () => 'Earth')
                 .hasOwn('address', 'here')).toBe(true);

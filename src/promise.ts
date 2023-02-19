@@ -23,7 +23,7 @@ import {Context} from ".";
  */
 export class Promise<T> implements PromiseLike<T> {
     #resolve = (value: T | PromiseLike<T>, context?: Context) => {
-        [this.#resolve, this.#reject, this.#context] = [() => undefined, () => undefined, context ?? this.#context];
+        [this.#resolve, this.#reject, this.#context] = [null as any, null as any, context ?? this.#context];
 
         if (Promise.#isPromiseLike<T>(value)) {
             value.then((value, context?: Context) => {
@@ -49,7 +49,7 @@ export class Promise<T> implements PromiseLike<T> {
     };
     #reject = (reason?: any, context?: Context) => {
         [this.#context, this.#status, this.#reason] = [context ?? this.#context, 'rejected', reason];
-        [this.#resolve, this.#reject] = [() => undefined, () => undefined];
+        [this.#resolve, this.#reject] = [null as any, null as any];
         setTimeout(listeners => {
             listeners.forEach(listener => listener(reason, this.#context));
         }, 0, this.#rejectionListeners);
@@ -75,10 +75,10 @@ export class Promise<T> implements PromiseLike<T> {
     constructor(executor: Promise.Executor<T>, context?: Context) {
         try {
             this.#context = context;
-            executor((value, context) => this.#resolve(value, context ?? this.#context),
-                (reason, context) => this.#reject(reason, context ?? this.#context));
+            executor((value, context) => this.#resolve?.(value, context ?? this.#context),
+                (reason, context) => this.#reject?.(reason, context ?? this.#context));
         } catch (error) {
-            this.#reject(error, this.#context);
+            this.#reject?.(error, this.#context);
         }
     }
 
@@ -176,10 +176,11 @@ export class Promise<T> implements PromiseLike<T> {
                         if (fulfillValues.size === uniqueValues.size) {
                             const outcomes = values.map(value => fulfillValues.get(value));
                             Reflect.defineProperty(outcomes, 'context', {
-                                value: Object.freeze(values.map(key => {
+                                value: values.map(key => {
                                     const ctx = fulfillContext.get(key);
-                                    return ctx ? [fulfillValues.get(key), ctx] : [fulfillValues.get(key)];
-                                })),
+                                    const value = fulfillValues.get(key);
+                                    return ctx ? [value, ctx] : [value];
+                                }),
                                 enumerable: false,
                                 writable: false,
                             });
@@ -195,10 +196,10 @@ export class Promise<T> implements PromiseLike<T> {
             if (fulfillValues.size === uniqueValues.size) {
                 const outcomes = values.map(value => fulfillValues.get(value));
                 Reflect.defineProperty(outcomes, 'context', {
-                    value: Object.freeze(values.map(key => {
+                    value: values.map(key => {
                         const value = fulfillValues.get(key);
                         return context ? [value, context] : [value];
-                    })),
+                    }),
                     enumerable: false,
                     writable: false,
                 });

@@ -10,5 +10,6 @@ steps:
             gcloud secrets versions access latest --secret="$1" --format='get(payload.data)' | tr '_-' '/+' | base64 -d
           }
           echo "//registry.npmjs.org/:_authToken=\"$( get-secret NPM_TOKEN )\"" >> .npmrc
+          echo "CODECOV_TOKEN=$( get-secret CODECOV_TOKEN )" > .codecovrc
   - name: gcr.io/cloud-builders/docker
-    args: [ "build", "." ]
+    args: [ "build", ".", "--build-arg", "BRANCH_NAME=$BRANCH_NAME" ]
