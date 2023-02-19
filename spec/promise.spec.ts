@@ -606,6 +606,27 @@ describe('Promise', () => {
                 new TestedPromise((_, rej) => setTimeout(rej, 1, -2))
             ])).rejects.toBe(-2);
         });
+
+        it('expose context-awareness through context property on aggregate array', async () => {
+            const context = new Context();
+            const otherContext = new Context();
+            const anotherContext = new Context();
+            const {context: results} = await TestedPromise.all([
+                0,
+                TestedPromise.resolve(1, otherContext),
+                TestedPromise.resolve(2),
+                TestedPromise.resolve(3, anotherContext),
+            ], context);
+            expect(results).toHaveLength(4);
+            expect(results[0][0]).toBe(0);
+            expect(results[0][1]).toBe(context);
+            expect(results[1][0]).toBe(1);
+            expect(results[1][1]).toBe(otherContext);
+            expect(results[2][0]).toBe(2);
+            expect(results[2][1]).toBe(context);
+            expect(results[3][0]).toBe(3);
+            expect(results[3][1]).toBe(anotherContext);
+        });
     });
 
     describe('::any( sources )', () => {
