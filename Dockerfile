@@ -31,6 +31,7 @@ COPY --from=build /opt/app/.coverage ./.coverage
 COPY .npmrc README.md LICENSE.md package.json yarn.loc[k] ./
 RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 1
 
+RUN apk --no-cache add curl
 RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov
 RUN chmod +x codecov
 RUN source .codecovrc && ./codecov --dir .coverage
