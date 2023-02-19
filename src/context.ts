@@ -1,5 +1,31 @@
 import {Promise as ContextPromise} from ".";
 
+/**
+ * @name Context
+ * @description Container for dependency injection (DI) and utility for context propagation.
+ * But let us establish some definitions and concepts at first:
+ *
+ * + **Token**: The key (often primary key) that is used to retrieve a value from the dependency container.
+ * + **Qualifier**: Beans are identified with a token. But variant(s) or specializations of the same beans can be tagged
+ *   with a qualifier. But a qualifier is optional.
+ * + **Default Qualifier**: When providing beans definition to a context, it denotes the absence of qualifier beside the
+ *   token. And, when injecting a bean, it denotes either the absense of qualifier or that there is actually a single
+ *   candidate bean from that token. _(This implementation do not expose the developers with default qualifiers.)_
+ * + **Context Level**: A context is somewhat related to the programming idea of scope. As such, contexts are
+ *   hierarchical. And a context level is just a node in the three of context.
+ *   > This implementation is opinionated for multi-parents' context-level, with the latter parent having precedence
+ *   > over the former, when we have to traverse the ancestor tree.
+ * + **Bean Definition**: The value or a function that will be used to resolve a bean. This definition sometimes
+ *   encompasses the token, its qualifiers when given and, sometimes, other associated metadata.
+ * + **Empty**: Strictly equals to `null` or `undefined`.
+ *
+ * @see provide
+ * @see inject
+ * @see hasOwn
+ * @see has
+ * @see invoke
+ * @see invoked
+ */
 export class Context {
     static readonly #DEFAULT_QUALIFIER = Symbol('DEFAULT_QUALIFIER');
     static readonly ERR_NO_BEAN_DEFINITION = 'NO_BEAN_DEFINITION';
@@ -20,6 +46,22 @@ export class Context {
     };
     readonly #parents: Context[] = [];
 
+    /**
+     * @constructor
+     * @description Create a context inheriting from none or more parents;
+     *
+     * @param parents A list of context to use as ancestors (fallbacks) of the context being created.
+     */
+    constructor(...parents: Context[]);
+    /**
+     * @constructor
+     * @description Create a context, eventually overriding its default configuration, inheriting from none or more
+     * parents.
+     *
+     * @param configuration A deeply-partial configuration, to customize default behaviour.
+     * @param parents A list of context to use as ancestors (fallbacks) of the context being created.
+     */
+    constructor(configuration: Context.DeepPartial<Context.Configuration>, ...parents: Context[]);
     constructor(configurationOrParent?: Context | Context.DeepPartial<Context.Configuration>, ...parents: Context[]) {
         if (configurationOrParent instanceof Context) {
             this.#parents.push(configurationOrParent, ...parents);
@@ -32,14 +74,59 @@ export class Context {
         }
     }
 
+    /**
+     * @description Return the current context of code execution, if any.
+     * @see invoke
+     */
     static get invoked(): Context | undefined {
         const invoked = Context.#invoked;
         Context.#invoked = undefined;
         return invoked;
     }
 
+    /**
+     * @description Provide a bean definition mapped to a `token`, using the default qualifier.
+     *
+     * @param token The token to map the given `beanDefinition` to
+     * @param beanDefinition A value (bean) or a function to create the bean
+     *
+     * @returns The context on which the `provide` method was called on.
+     *
+     * @throws (A) `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY`, when a bean definition with the given
+     *         `token` already exists in this context, under the default qualifier.
+     * @throws (B) `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty
+     *         value and context's configuration `factory.lazyValidation` is `false`.
+     *         > **NOTE:** If this context is configured with `factory.lazyValidation` to `false`, this error is:
+     *         > + thrown if the resolved bean is empty;
+     *         > + not thrown if the resolved bean is a `Promise`;
+     *         > + not thrown if this context is configured with `factory.lazyFunctionEvaluation` to `true`.
+     *
+     * @see inject
+     * @see provide
+     */
     provide<T extends Context.Token<any>>(
         token: T, beanDefinition: Context.BeanDefinition<T>): this;
+    /**
+     * @description Provide a bean definition mapped to a `token`, using the given qualifier/s.
+     *
+     * @param token The token to map the given `beanDefinition` to
+     * @param qualifiers One or more qualifiers under which to specify the given `beanDefinition`
+     * @param beanDefinition A value (bean) or a function to create the bean
+     *
+     * @returns The context on which the `provide` method was called on.
+     *
+     * @throws (A) `Error` where `error.name === Context.ERR_DUPLICATE_FACTORY`, when a bean definition with the given
+     *         `token` and any of the given `qualifiers` already exists in this context.
+     * @throws (B) `Error` where `error.name === Context.ERR_EMPTY_VALUE` when a bean definition resolves to an empty
+     *         value and context's configuration `factory.lazyValidation` is `false`.
+     *         > **NOTE:** If this context is configured with `factory.lazyValidation` to `false`, this error is:
+     *         > + thrown if the resolved bean is empty;
+     *         > + not thrown if the resolved bean is a `Promise`;
+     *         > + not thrown if this context is configured with `factory.lazyFunctionEvaluation` to `true`.
+     *
+     * @see inject
+     * @see provide
+     */
     provide<T extends Context.Token<any>>(
         token: T, qualifiers: string | string[], beanDefinition: Context.BeanDefinition<T>): this;
     provide<T extends Context.Token<any>>(
@@ -99,8 +186,74 @@ export class Context {
         return this;
     }
 
+    /**
+     * @description Retrieve a bean from dependency injection container using the default qualifier algorithm.
+     *              The algorithm is as follows:
+     *
+     * + First lookup the bean from internal cache
+     * + If not found, lookup the bean definition on the context this method was called on. If bean definition exists,
+     *   resolve the bean from it, update the internal cache and return the bean
+     * + If not found still, travel the parent contexts in reverse order, using a depth-first algorithm, and follow the
+     *   previous algorithm
+     * + If still the bean cannot be resolved, throw an error.
+     *
+     * @param token The token to retrieve the associated bean from, using default qualifier
+     *
+     * @returns The resolved bean. Note that when the resolved bean is a thenable, it gets wrapped into a context-aware
+     *          promise.
+     *
+     * @throws (A) `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
+     *         (A.1) there is no bean definition mapped under default qualifier;
+     *         (A.2) there are multiple qualified candidates under the given `token`.
+     * @throws (B) `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is found for
+     *          the given `token`.
+     * @throws (C) `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
+     *
+     * @see inject
+     * @see provide
+     */
     inject<T extends Context.Token<any>>(token: T): Context.Value<T>;
+    /**
+     * @description Retrieve a bean from dependency injection container using token and qualifier algorithm.
+     *              The algorithm is as follows:
+     *
+     * + First lookup the bean from internal cache
+     * + If not found, lookup the bean definition on the context this method was called on. If bean definition exists,
+     *   resolve the bean from it, update the internal cache and return the bean
+     * + If not found still, travel the parent contexts in reverse order, using a depth-first algorithm, and follow the
+     *   previous algorithm
+     * + If still the bean cannot be resolved, throw an error.
+     *
+     * @param token The token to retrieve the associated bean from, using default qualifier
+     * @param qualifier The qualifier, to select a specialization
+     *
+     * @returns The resolved bean. Note that when the resolved bean is a thenable, it gets wrapped into a context-aware
+     *          promise.
+     *
+     * @throws (A) `Error` where `error.name === Context.ERR_UNDECIDABLE_BEAN` when both the following are true:
+     *         (A.1) there is no bean definition mapped under default qualifier;
+     *         (A.2) there are multiple qualified candidates under the given `token`.
+     * @throws (B) `Error` where `error.name === Context.ERR_NO_BEAN_DEFINITION` when no bean definition is found for
+     *          the given `token` and `qualifier`.
+     * @throws (C) `Error` where `error.name === Context.ERR_EMPTY_VALUE` when the resolved bean is empty.
+     *
+     * @see inject
+     * @see provide
+     */
     inject<T extends Context.Token<any>>(token: T, qualifier: string): Context.Value<T>;
+    /**
+     * A variation of the other two overloads with more options, and more inline flexibility.
+     *
+     * @param token The token to retrieve the associated bean from, using default qualifier
+     * @param injectOptions Injection options
+     *
+     * @return Refer to the other overloads.
+     *
+     * @throws Refer to the more relatable overload.
+     *
+     * @see inject
+     * @see provide
+     */
     inject<T extends Context.Token<any>, D = never>(
         token: T, injectOptions: Context.InjectOptions<D>): Context.Value<T> | D;
     inject<T extends Context.Token<any>, D = never>(
@@ -159,14 +312,61 @@ export class Context {
         }
     }
 
+    /**
+     * @description Returns a boolean indicating whether this context itself has a bean definition under the given
+     *              parameters. Note that when no qualifier is given, the algorithm follows with the default qualifier
+     *              specification.
+     *
+     * @param token The token to look up the associated bean from
+     * @param qualifier [Optional] - The qualifier to specialize token lookup
+     *
+     * @returns `true` if there is a bean definition associated to the given token and eventually, qualifier. `false`
+     *          otherwise.
+     *
+     * @see has
+     */
     hasOwn(token: Context.Token<any>, qualifier?: string): boolean {
         return this.#hasOwn(token, qualifier ?? Context.#DEFAULT_QUALIFIER)
     }
 
+    /**
+     * @description Returns a boolean indicating whether this context itself has a bean definition under the given
+     *              parameters. Note that when no qualifier is given, the algorithm follows with the default qualifier
+     *              specification.
+     *
+     * @description When not found in this context, it travels the parent contexts in reverse order, using a depth-first
+     *              algorithm.
+     *
+     * @param token The token to look up the associated bean from
+     * @param qualifier [Optional] - The qualifier to specialize token lookup
+     *
+     * @returns `true` if there is a bean definition associated to the given token and eventually, qualifier. `false`
+     *          otherwise.
+     *
+     * @see hasOwn
+     */
     has(token: Context.Token<any>, qualifier?: string): boolean {
         return this.#has(token, qualifier ?? Context.#DEFAULT_QUALIFIER);
     }
 
+    /**
+     * @description Run code within context awareness.
+     *
+     * @description This context is set before the `fn` function execution. It is synchronously accessible using
+     *              `Context.invoked` static getter. Subsequent calls return `undefined`. Regardless of that getter
+     *              being called or not, the static context i synchronously set to `undefined` after `fn` function
+     *              execution.
+     *
+     * @description This is most useful in synchronous code execution. For asynchronous context propagation, use
+     *              context-aware promise implementation.
+     *
+     * @param fn A function to be executed.
+     *
+     * @returns Whatever value is returned by `fn` execution. If that returned value is a thenable, then it gets wrapped
+     *          under a context-aware thenable implementation.
+     *
+     * @see invoked
+     */
     invoke<R>(fn: (context: Context) => R): R extends PromiseLike<infer I> ? ContextPromise<I> : R {
         const returned = fn(Context.#invoked = this);
         Context.#invoked = undefined;
