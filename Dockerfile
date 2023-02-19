@@ -26,6 +26,7 @@ ENV HOME=/opt/app
 WORKDIR /opt/app
 ARG CODECOV_TOKEN
 ARG BRANCH_NAME
+ARG COMMIT_SHA
 ARG NPM_TOKEN
 
 COPY --from=build /opt/app/dist ./
@@ -36,6 +37,11 @@ RUN echo "//registry.npmjs.org/:_authToken=\"$NPM_TOKEN\"" >> .npmrc
 RUN apk --no-cache add curl
 RUN test 'main' = "$BRANCH_NAME" && npm publish --access public || echo 'Not published.'
 RUN curl -OLs https://uploader.codecov.io/latest/alpine/codecov && chmod +x codecov
-
-RUN env
-RUN ./codecov --nonZero --rootDir . --dir .coverage --branch "$BRANCH_NAME" --token "$CODECOV_TOKEN"
+RUN ./codecov \
+    --nonZero \
+    --rootDir . \
+    --dir .coverage \
+    --slug squall-io/context \
+    --token "$CODECOV_TOKEN" \
+    --branch "$BRANCH_NAME" \
+    --sha "$COMMIT_SHA"
