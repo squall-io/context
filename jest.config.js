@@ -6,8 +6,8 @@ module.exports = {
   testEnvironment: 'node',
   coverageDirectory: '.coverage',
   coverageReporters: [
-      'lcov',
-      'text',
+    'cobertura',
+    'text',
   ],
   setupFilesAfterEnv: [
     './spec/.jest/setup',
